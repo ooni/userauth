@@ -1,3 +1,4 @@
+use cmz::muCMZProtocol;
 use cmz::CMZ;
 use cmz::CMZCred;
 use cmz::{Serialize, Deserialize};
@@ -11,6 +12,8 @@ use cmz::CMZPubkey;
 use cmz::CMZMac;
 use group::Group;
 use cmz::CMZCredential;
+use cmz::*;
+//use sigma_compiler::*;
 
 pub fn add(left: u64, right: u64) -> u64 {
     left + right
@@ -18,7 +21,17 @@ pub fn add(left: u64, right: u64) -> u64 {
 
 
 CMZ! {UserAuthCredential<G>:
-    age, nym_id, rate_id, trust_level }
+    age,
+    nym_id,
+    measurement_count
+}
+
+// CMZ! {RangeCredential<G>: value}
+
+muCMZProtocol! {register,
+    ,
+    UAC: UserAuthCredential { nym_id: J, age: R, measurement_count: R},
+}
 
 
 #[cfg(test)]
