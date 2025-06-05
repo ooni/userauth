@@ -26,12 +26,16 @@ CMZ! {UserAuthCredential<G>:
     measurement_count
 }
 
-// CMZ! {RangeCredential<G>: value}
-
 muCMZProtocol! {register,
     ,
     UAC: UserAuthCredential { nym_id: J, age: R, measurement_count: R},
 }
+
+muCMZProtocol!(submit,
+    Old: UserAuthCredential { nym_id: H, age: H, measurement_count: H},
+    New: UserAuthCredential { nym_id: H, age: H, measurement_count: H},
+    Old.nym_id == New.nym_id && Old.age == New.age && Old.measurement_count + Scalar::from(1u64) == New.measurement_count
+);
 
 
 #[cfg(test)]
@@ -39,8 +43,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+    fn test_registration() {
+        let rng = &mut rand::thread_rng();
+        assert_eq!(1+1, 2);
+
+    }
+
+    #[test]
+    fn test_submit() {
+        asser_eq!(1+1, 2);
     }
 }
