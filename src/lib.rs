@@ -1,65 +1,40 @@
-use cmz::muCMZProtocol;
-use cmz::CMZ;
-use cmz::CMZCred;
-use cmz::{Serialize, Deserialize};
-use curve25519_dalek::ristretto::RistrettoPoint as G;
-use cmz::serde_as;
-use cmz::SerdeScalar;
-use cmz::CMZPrivkey;
-use rand::RngCore;
-use cmz::cmz_privkey_to_pubkey;
-use cmz::CMZPubkey;
-use cmz::CMZMac;
-use group::Group;
-use cmz::CMZCredential;
+// We want Scalars to be lowercase letters, and Points and credentials
+// to be capital letters
+#![allow(non_snake_case)]
+
 use cmz::*;
-//use sigma_compiler::*;
+use curve25519_dalek::ristretto::RistrettoPoint as G;
+use registration::UserAuthCredential;
+use serde::{Deserialize, Serialize};
+use sha2::Sha512;
+pub mod registration;
+pub mod submit;
 
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OONIAuth {
+    /// The private key for the main User Auth credential
+    privkey: CMZPrivkey<G>,
+    pubkey: CMZPubkey<G>,
 }
 
-
-CMZ! {UserAuthCredential<G>:
-    age,
-    nym_id,
-    measurement_count
-}
-
-muCMZProtocol! {register,
-    ,
-    UAC: UserAuthCredential { nym_id: J, age: S, measurement_count: I},
-}
-
-muCMZProtocol!(submit,
-    Old: UserAuthCredential { nym_id: H, age: H, measurement_count: H},
-    New: UserAuthCredential { nym_id: H, age: H, measurement_count: H},
-    Old.nym_id == New.nym_id && Old.age == New.age && Old.measurement_count + Scalar::from(1u64) == New.measurement_count
-);
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_registration() {
-        use curve25519_dalek::scalar::Scalar;
-        let rng = &mut rand::thread_rng();
-
-        cmz_group_init(G::generator() + G::generator()); // XXX. this is insecure.
-        let (_server_keypair, client_pub) = UserAuthCredential::gen_keys(rng, true);
-
-        let mut client_uac = UserAuthCredential::using_pubkey(&client_pub);
-        client_uac.age = Some(Scalar::from(100u64));
-        client_uac.measurement_count = Some(Scalar::from(0u64));
-
-        // let server_uac = UserAuthCredential::using_privkey(privkey: &server_keypair.privkey);
-        // register::prepare(rng, iss_cred_UAC)
+impl OONIAuth {
+    pub fn init() -> Self {
+        // Initialization
+        let mut rng = rand::thread_rng();
+        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
+        // Create the private and public keys for each of the types of
+        // credential with 'true' to indicate uCMZ
+        let (privkey, pubkey) = UserAuthCredential::gen_keys(&mut rng, true);
+        Self { privkey, pubkey }
     }
 
-    #[test]
-    fn test_submit() {
-        assert_eq!(1+1, 2);
+    /// Get today's (real or simulated) date as u32
+    pub fn today(&self) -> u32 {
+        // We will not encounter negative Julian dates (~6700 years ago)
+        // or ones larger than 32 bits
+        (time::OffsetDateTime::now_utc().date())
+            .to_julian_day()
+            .try_into()
+            .unwrap()
     }
 }
