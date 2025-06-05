@@ -28,7 +28,7 @@ CMZ! {UserAuthCredential<G>:
 
 muCMZProtocol! {register,
     ,
-    UAC: UserAuthCredential { nym_id: J, age: R, measurement_count: R},
+    UAC: UserAuthCredential { nym_id: J, age: S, measurement_count: I},
 }
 
 muCMZProtocol!(submit,
@@ -44,13 +44,22 @@ mod tests {
 
     #[test]
     fn test_registration() {
+        use curve25519_dalek::scalar::Scalar;
         let rng = &mut rand::thread_rng();
-        assert_eq!(1+1, 2);
 
+        cmz_group_init(G::generator() + G::generator()); // XXX. this is insecure.
+        let (_server_keypair, client_pub) = UserAuthCredential::gen_keys(rng, true);
+
+        let mut client_uac = UserAuthCredential::using_pubkey(&client_pub);
+        client_uac.age = Some(Scalar::from(100u64));
+        client_uac.measurement_count = Some(Scalar::from(0u64));
+
+        // let server_uac = UserAuthCredential::using_privkey(privkey: &server_keypair.privkey);
+        // register::prepare(rng, iss_cred_UAC)
     }
 
     #[test]
     fn test_submit() {
-        asser_eq!(1+1, 2);
+        assert_eq!(1+1, 2);
     }
 }
