@@ -4,6 +4,8 @@
 
 use cmz::*;
 use curve25519_dalek::ristretto::RistrettoPoint as G;
+use group::Group;
+type Scalar = <G as Group>::Scalar;
 use registration::UserAuthCredential;
 use serde::{Deserialize, Serialize};
 use sha2::Sha512;

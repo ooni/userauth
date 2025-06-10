@@ -7,11 +7,11 @@
 */
 
 use super::OONIAuth;
+use super::{Scalar, G};
 use cmz::*;
-use curve25519_dalek::ristretto::RistrettoPoint as G;
 use group::Group;
 use rand::RngCore;
-//use sha2::Sha512;
+use sha2::Sha512;
 
 CMZ! { UserAuthCredential:
     nym_id,
@@ -28,13 +28,13 @@ pub fn request(
     pubkeys: CMZPubkey<G>,
 ) -> Result<(open_registration::Request, open_registration::ClientState), CMZError> {
     let mut rng = rand::thread_rng();
-    //    cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
+    cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
 
     let mut UAC = UserAuthCredential::using_pubkey(&pubkeys);
     // nym_id is a random scalar that the user will keep secret but re-randomize at each request to
     // the OA
     // Generate random generic scalar
-    let const_nym = <G as Group>::Scalar::random(&mut rng);
+    let const_nym = Scalar::random(&mut rng);
     UAC.nym_id = Some(const_nym);
 
     match open_registration::prepare(&mut rng, UAC) {
@@ -57,7 +57,7 @@ impl OONIAuth {
             recvreq,
             |UAC: &mut UserAuthCredential| {
                 UAC.set_privkey(&self.privkey);
-                UAC.measurement_count = Some(<G as Group>::Scalar::ZERO);
+                UAC.measurement_count = Some(Scalar::ZERO);
                 UAC.age = Some(self.today().into());
                 Ok(())
             },
@@ -89,8 +89,7 @@ mod tests {
     fn test_registration() {
         use curve25519_dalek::scalar::Scalar;
         let rng = &mut rand::thread_rng();
-
-        cmz_group_init(G::generator() + G::generator()); //       XXX. this is insecure.
+        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
         let (_server_keypair, client_pub) = UserAuthCredential::gen_keys(rng, true);
 
         let mut client_uac = UserAuthCredential::using_pubkey(&client_pub);
