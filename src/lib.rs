@@ -9,6 +9,8 @@ type Scalar = <G as Group>::Scalar;
 use registration::UserAuthCredential;
 use serde::{Deserialize, Serialize};
 use sha2::Sha512;
+use subtle::ConstantTimeEq;
+pub mod errors;
 pub mod registration;
 pub mod submit;
 
@@ -39,4 +41,15 @@ impl OONIAuth {
             .try_into()
             .unwrap()
     }
+}
+
+// Try to extract a u32 from a Scalar
+#[inline]
+pub fn scalar_u32(s: &Scalar) -> Option<u32> {
+    // Check that the top 28 bytes of the Scalar are 0
+    let sbytes: &[u8; 32] = s.as_bytes();
+    if sbytes[4..].ct_eq(&[0u8; 28]).unwrap_u8() == 0 {
+        return None;
+    }
+    Some(u32::from_le_bytes(sbytes[..4].try_into().unwrap()))
 }
