@@ -15,6 +15,7 @@ muCMZProtocol!(submit<min_age_today, max_age, min_measurement_count, max_measure
     Old.age = New.age,
     New.measurement_count = Old.measurement_count + Scalar::from(1),
     // NYM evaluation function
+    // TODO: Fix syntax for group element equations
     // Old.nym_id * DOMAIN = NYM,
 
     // TODO: Fix constraint syntax - the macro doesn't support inequality constraints
