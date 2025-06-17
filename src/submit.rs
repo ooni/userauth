@@ -7,6 +7,7 @@ use cmz::*;
 use group::Group;
 use rand::{CryptoRng, RngCore};
 use sha2::Sha512;
+use curve25519_dalek::RistrettoPoint;
 
 muCMZProtocol!(submit<min_age_today, max_age, min_measurement_count, max_measurement_count>,
     Old: UserAuthCredential { nym_id: H, age: H, measurement_count: H},
@@ -32,16 +33,22 @@ muCMZProtocol!(submit<min_age_today, max_age, min_measurement_count, max_measure
 pub fn request(
     rng: &mut (impl RngCore + CryptoRng),
     Old: UserAuthCredential,
-    _probe_cc: String,
-    _probe_asn: String,
+    probe_cc: String,
+    probe_asn: String,
     age_range: std::ops::Range<u32>,
     measurement_count_range: std::ops::Range<u32>,
     pubkeys: CMZPubkey<G>,
     today: u32,
-) -> Result<(submit::Request, submit::ClientState), CredentialError> {
+) -> Result<((submit::Request, submit::ClientState), RistrettoPoint), CredentialError> {
     cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
 
-    // Ensure the credential can be correctly shown: it must be within the age range
+    // TODO: Implement domain-specific generator and NYM computation
+    // when group element equations are supported in the macro
+    let domain_str = format!("OONI-DOMAIN-{}-{}", probe_cc, probe_asn);
+    let DOMAIN = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
+    let NYM = Old.nym_id.unwrap() * DOMAIN;
+
+    // Ensure the credential timestamp is within the allowed range
     let age: u32 = match scalar_u32(&Old.age.unwrap()) {
         Some(v) => v,
         None => {
@@ -52,14 +59,17 @@ pub fn request(
         }
     };
 
-    // Check if credential age is within the allowed range
-    if age + age_range.start > today {
-        return Err(CredentialError::TimeThresholdNotMet(age + age_range.start - today));
+    // Check if credential timestamp is within the allowed range
+    // age_range represents the valid timestamp range (min_timestamp..max_timestamp)
+    
+    // Check if credential is too old (timestamp too early)
+    if age < age_range.start {
+        return Err(CredentialError::CredentialExpired);
     }
 
-    // Check if credential is too old (beyond the max age)
-    if age + age_range.end < today {
-        return Err(CredentialError::CredentialExpired);
+    // Check if credential is too new (timestamp too recent)
+    if age >= age_range.end {
+        return Err(CredentialError::TimeThresholdNotMet(age - age_range.end));
     }
 
     // The measurement count has to be within the allowed range
@@ -75,13 +85,19 @@ pub fn request(
     if measurement_count < measurement_count_range.start {
         return Err(CredentialError::InvalidField(
             String::from("measurement_count"),
-            format!("measurement_count {} is below minimum {}", measurement_count, measurement_count_range.start),
+            format!(
+                "measurement_count {} is below minimum {}",
+                measurement_count, measurement_count_range.start
+            ),
         ));
     }
     if measurement_count >= measurement_count_range.end {
         return Err(CredentialError::InvalidField(
             String::from("measurement_count"),
-            format!("measurement_count {} is at or above maximum {}", measurement_count, measurement_count_range.end),
+            format!(
+                "measurement_count {} is at or above maximum {}",
+                measurement_count, measurement_count_range.end
+            ),
         ));
     }
 
@@ -98,8 +114,8 @@ pub fn request(
     };
 
     match submit::prepare(rng, &Old, New, &params) {
-        //Ok(req_state) => Ok((req_state, NYM)),
-        Ok(req_state) => Ok(req_state),
+        Ok(req_state) => Ok((req_state, NYM)),
+        // Ok(req_state) => Ok(req_state),
         Err(_) => Err(CredentialError::CMZError(CMZError::CliProofFailed)),
     }
 }
