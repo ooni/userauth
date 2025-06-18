@@ -6,7 +6,7 @@
  * - measurement_count: All new accounts will begin with 0
 */
 
-use super::OONIAuth;
+use super::{ServerState, UserState};
 use super::{Scalar, G};
 use cmz::*;
 use group::Group;
@@ -24,26 +24,47 @@ muCMZProtocol! {open_registration,
     UAC: UserAuthCredential { nym_id: J, age: S, measurement_count: I},
 }
 
-pub fn request(
-    rng: &mut (impl RngCore + CryptoRng),
-    pubkeys: CMZPubkey<G>,
-) -> Result<(open_registration::Request, open_registration::ClientState), CMZError> {
-    cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
+impl UserState {
+    pub fn request(
+        &self,
+        rng: &mut (impl RngCore + CryptoRng),
+    ) -> Result<(open_registration::Request, open_registration::ClientState), CMZError> {
+        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
 
-    let mut UAC = UserAuthCredential::using_pubkey(&pubkeys);
-    // nym_id is a random scalar that the user will keep secret but re-randomize at each request to
-    // the OA
-    // Generate random generic scalar
-    let const_nym = Scalar::random(rng);
-    UAC.nym_id = Some(const_nym);
+        let mut UAC = UserAuthCredential::using_pubkey(&self.pp);
+        // nym_id is a random scalar that the user will keep secret but re-randomize at each request to
+        // the OA
+        // Generate random generic scalar
+        let const_nym = Scalar::random(rng);
+        UAC.nym_id = Some(const_nym);
+        // For registration, age and measurement_count will be set by the server
+        // But we need to provide some initial values for the protocol
+        UAC.age = Some(Scalar::ZERO);
+        UAC.measurement_count = Some(Scalar::ZERO);
 
-    match open_registration::prepare(rng, UAC) {
-        Ok(req_state) => Ok(req_state),
-        Err(_) => Err(CMZError::CliProofFailed),
+        match open_registration::prepare(rng, UAC) {
+            Ok(req_state) => Ok(req_state),
+            Err(_) => Err(CMZError::CliProofFailed),
+        }
     }
 }
 
-impl OONIAuth {
+impl UserState {
+    pub fn handle_response(
+        &mut self,
+        state: open_registration::ClientState,
+        rep: open_registration::Reply,
+    ) -> Result<(), CMZError> {
+        let replybytes = rep.as_bytes();
+        let recvreply = open_registration::Reply::try_from(&replybytes[..]).unwrap();
+        match state.finalize(recvreply) {
+            Ok(cred) => {self.credential = Some(cred.clone()); Ok(())},
+            Err(_e) => Err(CMZError::IssProofFailed),
+        }
+    }
+}
+
+impl ServerState {
     pub fn open_registration(
         &mut self,
         req: open_registration::Request,
@@ -56,7 +77,7 @@ impl OONIAuth {
             &mut rng,
             recvreq,
             |UAC: &mut UserAuthCredential| {
-                UAC.set_privkey(&self.privkey);
+                UAC.set_privkey(&self.sk);
                 UAC.measurement_count = Some(Scalar::ZERO);
                 UAC.age = Some(self.today().into());
                 Ok(())
@@ -69,18 +90,6 @@ impl OONIAuth {
     }
 }
 
-pub fn handle_response(
-    state: open_registration::ClientState,
-    rep: open_registration::Reply,
-) -> Result<UserAuthCredential, CMZError> {
-    let replybytes = rep.as_bytes();
-    let recvreply = open_registration::Reply::try_from(&replybytes[..]).unwrap();
-    match state.finalize(recvreply) {
-        Ok(cred) => Ok(cred),
-        Err(_e) => Err(CMZError::IssProofFailed),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -89,24 +98,23 @@ mod tests {
     fn test_registration() {
         let rng = &mut rand::thread_rng();
         // Initialize group first for gen_keys
-        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
-        let (_server_keypair, client_pub) = UserAuthCredential::gen_keys(rng, true);
-
-        // Test the registration request function with external RNG
+        let mut server_state = ServerState::new(rng);
         // Note: request() will call cmz_group_init again, but that's okay
-        let result = request(rng, client_pub.clone());
+        let mut user_state = UserState::new(server_state.public_parameters());
 
-        // TODO: Fix the registration protocol issue causing CliProofFailed
-        // For now, just verify the API accepts external RNG parameter
-        match result {
-            Ok((_request, _client_state)) => {
-                println!("Registration request succeeded with external RNG");
-            }
-            Err(e) => {
-                println!("Registration request failed with external RNG: {:?}", e);
-                // The API change is working, but there's a protocol-level issue
-            }
-        }
+        let result = user_state.request(rng);
+        assert!(result.is_ok(), "Registration request should succeed");
+        let (request, client_state) = result.unwrap();
+
+        let server_response = server_state.open_registration(request);
+        assert!(server_response.is_ok(), "Server should process registration request successfully");
+        let response = server_response.unwrap();
+
+        let result = user_state.handle_response(client_state, response);
+        assert!(result.is_ok(), "User should handle server response successfully");
+        assert!(user_state.credential.is_some(), "User should receive a valid credential");
+
+        assert_ne!(user_state.credential.as_ref().unwrap().nym_id, Some(Scalar::ZERO), "Nym ID should be non-zero after registration");
     }
 
     #[test]
@@ -116,11 +124,11 @@ mod tests {
         // TODO: Add full integration test when server implementation is ready
 
         let rng = &mut rand::thread_rng();
-        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
-        let (_server_keypair, client_pub) = UserAuthCredential::gen_keys(rng, true);
+        let server_state = ServerState::new(rng);
+        let user_state = UserState::new(server_state.public_parameters());
 
         // Test basic API structure
-        let result = request(rng, client_pub);
+        let result = user_state.request(rng);
         if let Ok((_request, _client_state)) = result {
             println!("Registration request/state structure is valid");
             // TODO: Complete the test when we have a working server response

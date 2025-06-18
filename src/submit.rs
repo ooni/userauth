@@ -1,13 +1,13 @@
 use std::u32;
 
-use super::{scalar_u32, G};
+use super::{scalar_u32, ServerState, UserState, G};
 use crate::errors::CredentialError;
 use crate::registration::UserAuthCredential;
 use cmz::*;
+use curve25519_dalek::RistrettoPoint;
 use group::Group;
 use rand::{CryptoRng, RngCore};
 use sha2::Sha512;
-use curve25519_dalek::RistrettoPoint;
 
 muCMZProtocol!(submit<min_age_today, max_age, min_measurement_count, max_measurement_count>,
     Old: UserAuthCredential { nym_id: H, age: H, measurement_count: H},
@@ -26,138 +26,168 @@ muCMZProtocol!(submit<min_age_today, max_age, min_measurement_count, max_measure
     // Old.measurement_count <= max_measurement_count,
 );
 
-// The submit request will take values that were received from a separate recent request
-// to the server for a manifest file that contains the probe_cc, probe_asn, age_range, and
-// measurement_count_range values. The server will have access to the same values but will require
-// some indication that matches the request and probe_cc/probe_asn values
-pub fn request(
-    rng: &mut (impl RngCore + CryptoRng),
-    Old: UserAuthCredential,
-    probe_cc: String,
-    probe_asn: String,
-    age_range: std::ops::Range<u32>,
-    measurement_count_range: std::ops::Range<u32>,
-    pubkeys: CMZPubkey<G>,
-    today: u32,
-) -> Result<((submit::Request, submit::ClientState), RistrettoPoint), CredentialError> {
-    cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
+impl UserState {
+    pub fn submit_request(
+        &self,
+        rng: &mut (impl RngCore + CryptoRng),
+        probe_cc: String,
+        probe_asn: String,
+        age_range: std::ops::Range<u32>,
+        measurement_count_range: std::ops::Range<u32>,
+    ) -> Result<((submit::Request, submit::ClientState), RistrettoPoint), CredentialError> {
+        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
 
-    // TODO: Implement domain-specific generator and NYM computation
-    // when group element equations are supported in the macro
-    let domain_str = format!("OONI-DOMAIN-{}-{}", probe_cc, probe_asn);
-    let DOMAIN = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
-    let NYM = Old.nym_id.unwrap() * DOMAIN;
+        // Get the current credential
+        let Old = self.credential.as_ref()
+            .ok_or(CredentialError::InvalidField(
+                String::from("credential"),
+                String::from("No credential available"),
+            ))?;
 
-    // Ensure the credential timestamp is within the allowed range
-    let age: u32 = match scalar_u32(&Old.age.unwrap()) {
-        Some(v) => v,
-        None => {
-            return Err(CredentialError::InvalidField(
-                String::from("age"),
-                String::from("could not be converted to u32"),
-            ))
+        // TODO: Implement domain-specific generator and NYM computation
+        // when group element equations are supported in the macro
+        let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
+        let DOMAIN = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
+        let NYM = Old.nym_id.unwrap() * DOMAIN;
+
+        // Ensure the credential timestamp is within the allowed range
+        let age: u32 = match scalar_u32(&Old.age.unwrap()) {
+            Some(v) => v,
+            None => {
+                return Err(CredentialError::InvalidField(
+                    String::from("age"),
+                    String::from("could not be converted to u32"),
+                ))
+            }
+        };
+
+        // Check if credential timestamp is within the allowed range
+        // age_range represents the valid timestamp range (min_timestamp..max_timestamp)
+
+        // Check if credential is too old (timestamp too early)
+        if age < age_range.start {
+            return Err(CredentialError::CredentialExpired);
         }
-    };
 
-    // Check if credential timestamp is within the allowed range
-    // age_range represents the valid timestamp range (min_timestamp..max_timestamp)
+        // Check if credential is too new (timestamp too recent)
+        if age >= age_range.end {
+            return Err(CredentialError::TimeThresholdNotMet(age - age_range.end));
+        }
 
-    // Check if credential is too old (timestamp too early)
-    if age < age_range.start {
-        return Err(CredentialError::CredentialExpired);
-    }
-
-    // Check if credential is too new (timestamp too recent)
-    if age >= age_range.end {
-        return Err(CredentialError::TimeThresholdNotMet(age - age_range.end));
-    }
-
-    // The measurement count has to be within the allowed range
-    let measurement_count: u32 = match scalar_u32(&Old.measurement_count.unwrap()) {
-        Some(v) => v,
-        None => {
+        // The measurement count has to be within the allowed range
+        let measurement_count: u32 = match scalar_u32(&Old.measurement_count.unwrap()) {
+            Some(v) => v,
+            None => {
+                return Err(CredentialError::InvalidField(
+                    String::from("measurement_count"),
+                    String::from("could not be converted to u32"),
+                ))
+            }
+        };
+        if measurement_count < measurement_count_range.start {
             return Err(CredentialError::InvalidField(
                 String::from("measurement_count"),
-                String::from("could not be converted to u32"),
-            ))
+                format!(
+                    "measurement_count {} is below minimum {}",
+                    measurement_count, measurement_count_range.start
+                ),
+            ));
         }
-    };
-    if measurement_count < measurement_count_range.start {
-        return Err(CredentialError::InvalidField(
-            String::from("measurement_count"),
-            format!(
-                "measurement_count {} is below minimum {}",
-                measurement_count, measurement_count_range.start
-            ),
-        ));
-    }
-    if measurement_count >= measurement_count_range.end {
-        return Err(CredentialError::InvalidField(
-            String::from("measurement_count"),
-            format!(
-                "measurement_count {} is at or above maximum {}",
-                measurement_count, measurement_count_range.end
-            ),
-        ));
+        if measurement_count >= measurement_count_range.end {
+            return Err(CredentialError::InvalidField(
+                String::from("measurement_count"),
+                format!(
+                    "measurement_count {} is at or above maximum {}",
+                    measurement_count, measurement_count_range.end
+                ),
+            ));
+        }
+
+        //let NYM = PRF(nym_id, nym_scope.format(probe_cc, probe_asn))
+        let mut New = UserAuthCredential::using_pubkey(&self.pp);
+        New.nym_id = Old.nym_id;
+        New.age = Old.age;
+        New.measurement_count = Some((measurement_count + 1).into());
+        let params = submit::Params {
+            min_age_today: age_range.start.into(),
+            max_age: age_range.end.into(),
+            min_measurement_count: measurement_count_range.start.into(),
+            max_measurement_count: measurement_count_range.end.into(),
+        };
+
+        match submit::prepare(rng, &Old, New, &params) {
+            Ok(req_state) => Ok((req_state, NYM)),
+            Err(_) => Err(CredentialError::CMZError(CMZError::CliProofFailed)),
+        }
     }
 
-    //let NYM = PRF(nym_id, nym_scope.format(probe_cc, probe_asn))
-    let mut New = UserAuthCredential::using_pubkey(&pubkeys);
-    New.nym_id = Old.nym_id;
-    New.age = Old.age;
-    New.measurement_count = Some((measurement_count + 1).into());
-    let params = submit::Params {
-        min_age_today: (today - age_range.start).into(),
-        max_age: (today - age_range.end).into(),
-        min_measurement_count: measurement_count_range.start.into(),
-        max_measurement_count: measurement_count_range.end.into(),
-    };
-
-    match submit::prepare(rng, &Old, New, &params) {
-        Ok(req_state) => Ok((req_state, NYM)),
-        Err(_) => Err(CredentialError::CMZError(CMZError::CliProofFailed)),
+    pub fn handle_submit_response(
+        &mut self,
+        state: submit::ClientState,
+        rep: submit::Reply,
+    ) -> Result<(), CMZError> {
+        let replybytes = rep.as_bytes();
+        let recvreply = submit::Reply::try_from(&replybytes[..]).unwrap();
+        match state.finalize(recvreply) {
+            Ok(cred) => {
+                self.credential = Some(cred);
+                Ok(())
+            }
+            Err(_e) => Err(CMZError::IssProofFailed),
+        }
     }
 }
-/*
-impl OONIAuth {
-    pub fn submit(&mut self, req: submit::Request) -> Result<submit::Reply, CMZError> {
-        let mut rng = rand::thread_rng();
+
+impl ServerState {
+    pub fn handle_submit(
+        &mut self,
+        rng: &mut (impl RngCore + CryptoRng),
+        req: submit::Request,
+        _nym: RistrettoPoint,
+        _probe_cc: &str,
+        _probe_asn: &str,
+        age_range: std::ops::Range<u32>,
+        measurement_count_range: std::ops::Range<u32>,
+    ) -> Result<submit::Reply, CMZError> {
         let reqbytes = req.as_bytes();
 
         let recvreq = submit::Request::try_from(&reqbytes[..]).unwrap();
+        let params = submit::Params {
+            min_age_today: age_range.start.into(),
+            max_age: age_range.end.into(),
+            min_measurement_count: measurement_count_range.start.into(),
+            max_measurement_count: measurement_count_range.end.into(),
+        };
+
+        let server_sk = self.sk.clone();
         match submit::handle(
-            &mut rng,
+            rng,
             recvreq,
-            |UAC: &mut UserAuthCredential| {
-                UAC.set_privkey(&self.privkey);
-                UAC.measurement_count = Some(Scalar::ZERO);
-                UAC.age = Some(self.today().into());
+            move |Old: &mut UserAuthCredential, New: &mut UserAuthCredential| {
+                // Set the private key for the credentials - this is essential for the protocol
+                Old.set_privkey(&server_sk);
+                New.set_privkey(&server_sk);
+
+                // The protocol should populate Old and New from the client's proof
+                // We don't set the values here - they come from the client's proof
+                // We just return the parameters to validate against
+                Ok(params)
+            },
+            |_Old: &UserAuthCredential, _New: &UserAuthCredential| {
+                // Additional validation callback
                 Ok(())
             },
-            |_UAC: &UserAuthCredential| Ok(()),
         ) {
-            Ok((response, _UAC_issuer)) => Ok(response),
-            Err(_) => Err(CMZError::IssProofFailed),
+            Ok((response, (_old_cred, _new_cred))) => Ok(response),
+            Err(e) => Err(e),
         }
-    }
-}
-*/
-
-pub fn handle_response(
-    state: submit::ClientState,
-    rep: submit::Reply,
-) -> Result<UserAuthCredential, CMZError> {
-    let replybytes = rep.as_bytes();
-    let recvreply = submit::Reply::try_from(&replybytes[..]).unwrap();
-    match state.finalize(recvreply) {
-        Ok(cred) => Ok(cred),
-        Err(_e) => Err(CMZError::IssProofFailed),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{G, Scalar};
+    use super::*;
+    use crate::{ServerState, UserState, Scalar, G};
     use sha2::Sha512;
 
     #[test]
@@ -167,7 +197,7 @@ mod tests {
 
         let probe_cc = "US";
         let probe_asn = "AS1234";
-        let domain_str = format!("OONI-DOMAIN-{}-{}", probe_cc, probe_asn);
+        let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
         let domain = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
 
         // Test with a known nym_id
@@ -175,7 +205,7 @@ mod tests {
         let nym = nym_id * domain;
 
         // Different domain should produce different NYM
-        let different_domain_str = format!("OONI-DOMAIN-{}-{}", "UK", "AS5678");
+        let different_domain_str = format!("ooni.org/{}/{}", "UK", "AS5678");
         let different_domain = G::hash_from_bytes::<Sha512>(different_domain_str.as_bytes());
         let different_nym = nym_id * different_domain;
 
@@ -185,4 +215,74 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_submit_request() {
+        let rng = &mut rand::thread_rng();
+
+        // Setup server and user
+        let mut server_state = ServerState::new(rng);
+        let mut user_state = UserState::new(server_state.public_parameters());
+
+        // First do registration to get a credential
+        let result = user_state.request(rng);
+        assert!(result.is_ok(), "Registration request should succeed");
+        let (reg_request, reg_client_state) = result.unwrap();
+
+        let server_response = server_state.open_registration(reg_request);
+        assert!(server_response.is_ok(), "Server should process registration request successfully");
+        let reg_response = server_response.unwrap();
+
+        let result = user_state.handle_response(reg_client_state, reg_response);
+        assert!(result.is_ok(), "User should handle server response successfully");
+        assert!(user_state.credential.is_some(), "User should receive a valid credential");
+
+        // Test submit request with valid parameters
+        let probe_cc = "US".to_string();
+        let probe_asn = "AS1234".to_string();
+        let today = server_state.today();
+        let age_range = (today - 30)..(today + 1); // Credential valid for 30 days
+        let measurement_count_range = 0..100;
+
+        let result = user_state.submit_request(
+            rng,
+            probe_cc.clone(),
+            probe_asn.clone(),
+            age_range.clone(),
+            measurement_count_range.clone(),
+        );
+
+        assert!(result.is_ok(), "Submit request should succeed with valid credential");
+        let ((request, client_state), nym) = result.unwrap();
+
+        // Verify the request is valid
+        assert!(request.as_bytes().len() > 0, "Request should have content");
+
+        // Verify NYM is computed
+        assert_ne!(nym, G::identity(), "NYM should not be identity");
+
+        // Test server handling of submit request
+        let server_result = server_state.handle_submit(
+            rng,
+            request,
+            nym,
+            &probe_cc,
+            &probe_asn,
+            age_range,
+            measurement_count_range,
+        );
+        assert!(server_result.is_ok(), "Server should handle submit request successfully");
+        let response = server_result.unwrap();
+
+        // Test user handling of server response
+        let handle_result = user_state.handle_submit_response(client_state, response);
+        assert!(handle_result.is_ok(), "User should handle submit response successfully");
+
+        // Verify credential was updated
+        assert!(user_state.credential.is_some(), "User should still have credential");
+        let updated_cred = user_state.credential.as_ref().unwrap();
+
+        // Verify measurement count was incremented
+        let new_count = scalar_u32(&updated_cred.measurement_count.unwrap()).unwrap();
+        assert_eq!(new_count, 1, "Measurement count should be incremented to 1");
+    }
 }

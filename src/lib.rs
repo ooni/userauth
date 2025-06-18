@@ -6,6 +6,7 @@ use cmz::*;
 use curve25519_dalek::ristretto::RistrettoPoint as G;
 use group::Group;
 type Scalar = <G as Group>::Scalar;
+use rand::{CryptoRng, RngCore};
 use registration::UserAuthCredential;
 use serde::{Deserialize, Serialize};
 use sha2::Sha512;
@@ -15,21 +16,33 @@ pub mod registration;
 pub mod submit;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct OONIAuth {
+pub struct ServerState {
     /// The private key for the main User Auth credential
-    privkey: CMZPrivkey<G>,
-    pubkey: CMZPubkey<G>,
+    sk: CMZPrivkey<G>,
+    pp: CMZPubkey<G>,
 }
 
-impl OONIAuth {
-    pub fn init() -> Self {
+
+
+pub struct UserState {
+    /// The public parameters for the client
+    pub pp: CMZPubkey<G>,
+    pub(crate) credential: Option<UserAuthCredential>,
+}
+
+impl ServerState {
+    pub fn new(rng: &mut (impl RngCore + CryptoRng)) -> Self {
         // Initialization
-        let mut rng = rand::thread_rng();
         cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
-        // Create the private and public keys for each of the types of
+        // Create the private key and public parameters for each of the types of
         // credential with 'true' to indicate uCMZ
-        let (privkey, pubkey) = UserAuthCredential::gen_keys(&mut rng, true);
-        Self { privkey, pubkey }
+        let (sk, pp) = UserAuthCredential::gen_keys(rng, true);
+        Self { sk, pp }
+    }
+
+    /// Get the public parameters for credential operations
+    pub fn public_parameters(&self) -> CMZPubkey<G> {
+        self.pp.clone()
     }
 
     /// Get today's (real or simulated) date as u32
@@ -40,6 +53,18 @@ impl OONIAuth {
             .to_julian_day()
             .try_into()
             .unwrap()
+    }
+
+}
+
+impl UserState {
+    pub fn new(pp: CMZPubkey<G>) -> Self {
+        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
+
+        Self {
+            pp,
+            credential: None,
+        }
     }
 }
 
