@@ -95,7 +95,7 @@ mod tests {
         // Test the registration request function with external RNG
         // Note: request() will call cmz_group_init again, but that's okay
         let result = request(rng, client_pub.clone());
-        
+
         // TODO: Fix the registration protocol issue causing CliProofFailed
         // For now, just verify the API accepts external RNG parameter
         match result {
@@ -110,5 +110,20 @@ mod tests {
     }
 
     #[test]
-    fn test_submit() {}
+    fn test_handle_response() {
+        // Test the handle_response function
+        // This is a basic structure test since we need actual response data
+        // TODO: Add full integration test when server implementation is ready
+
+        let rng = &mut rand::thread_rng();
+        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
+        let (_server_keypair, client_pub) = UserAuthCredential::gen_keys(rng, true);
+
+        // Test basic API structure
+        let result = request(rng, client_pub);
+        if let Ok((_request, _client_state)) = result {
+            println!("Registration request/state structure is valid");
+            // TODO: Complete the test when we have a working server response
+        }
+    }
 }

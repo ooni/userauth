@@ -61,7 +61,7 @@ pub fn request(
 
     // Check if credential timestamp is within the allowed range
     // age_range represents the valid timestamp range (min_timestamp..max_timestamp)
-    
+
     // Check if credential is too old (timestamp too early)
     if age < age_range.start {
         return Err(CredentialError::CredentialExpired);
@@ -115,7 +115,6 @@ pub fn request(
 
     match submit::prepare(rng, &Old, New, &params) {
         Ok(req_state) => Ok((req_state, NYM)),
-        // Ok(req_state) => Ok(req_state),
         Err(_) => Err(CredentialError::CMZError(CMZError::CliProofFailed)),
     }
 }
@@ -154,4 +153,36 @@ pub fn handle_response(
         Ok(cred) => Ok(cred),
         Err(_e) => Err(CMZError::IssProofFailed),
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{G, Scalar};
+    use sha2::Sha512;
+
+    #[test]
+    fn test_domain_nym_computation() {
+        // Test the DOMAIN and NYM computation logic that will be used
+        // when group element equations are supported in the macro
+
+        let probe_cc = "US";
+        let probe_asn = "AS1234";
+        let domain_str = format!("OONI-DOMAIN-{}-{}", probe_cc, probe_asn);
+        let domain = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
+
+        // Test with a known nym_id
+        let nym_id = Scalar::from(42u32);
+        let nym = nym_id * domain;
+
+        // Different domain should produce different NYM
+        let different_domain_str = format!("OONI-DOMAIN-{}-{}", "UK", "AS5678");
+        let different_domain = G::hash_from_bytes::<Sha512>(different_domain_str.as_bytes());
+        let different_nym = nym_id * different_domain;
+
+        assert_ne!(
+            nym, different_nym,
+            "Different domains should produce different NYMs"
+        );
+    }
+
 }

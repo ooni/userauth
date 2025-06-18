@@ -14,9 +14,6 @@ pub mod errors;
 pub mod registration;
 pub mod submit;
 
-#[cfg(test)]
-mod test_submit;
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OONIAuth {
     /// The private key for the main User Auth credential
