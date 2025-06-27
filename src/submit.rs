@@ -14,16 +14,12 @@ muCMZProtocol!(submit<min_age_today, max_age, min_measurement_count, max_measure
     New: UserAuthCredential { nym_id: H, age: H, measurement_count: H},
     Old.nym_id = New.nym_id,
     Old.age = New.age,
-    New.measurement_count = Old.measurement_count + Scalar::from(1),
+    New.measurement_count = Old.measurement_count + 1,
     // NYM evaluation function
     // TODO: Fix syntax for group element equations
     // Old.nym_id * DOMAIN = NYM,
-
-    // TODO: Fix constraint syntax - the macro doesn't support inequality constraints
-    // Old.age >= min_age_today,
-    // Old.age <= max_age,
-    // Old.measurement_count >= min_measurement_count,
-    // Old.measurement_count <= max_measurement_count,
+    [min_age_today..max_age].contains(Old.age),
+    [min_measurement_count..max_measurement_count].contains(Old.measurement_count)
 );
 
 impl UserState {
@@ -38,7 +34,9 @@ impl UserState {
         cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
 
         // Get the current credential
-        let Old = self.credential.as_ref()
+        let Old = self
+            .credential
+            .as_ref()
             .ok_or(CredentialError::InvalidField(
                 String::from("credential"),
                 String::from("No credential available"),
@@ -187,7 +185,7 @@ impl ServerState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{ServerState, UserState, Scalar, G};
+    use crate::{Scalar, ServerState, UserState, G};
     use sha2::Sha512;
 
     #[test]
@@ -229,12 +227,21 @@ mod tests {
         let (reg_request, reg_client_state) = result.unwrap();
 
         let server_response = server_state.open_registration(reg_request);
-        assert!(server_response.is_ok(), "Server should process registration request successfully");
+        assert!(
+            server_response.is_ok(),
+            "Server should process registration request successfully"
+        );
         let reg_response = server_response.unwrap();
 
         let result = user_state.handle_response(reg_client_state, reg_response);
-        assert!(result.is_ok(), "User should handle server response successfully");
-        assert!(user_state.credential.is_some(), "User should receive a valid credential");
+        assert!(
+            result.is_ok(),
+            "User should handle server response successfully"
+        );
+        assert!(
+            user_state.credential.is_some(),
+            "User should receive a valid credential"
+        );
 
         // Test submit request with valid parameters
         let probe_cc = "US".to_string();
@@ -251,7 +258,10 @@ mod tests {
             measurement_count_range.clone(),
         );
 
-        assert!(result.is_ok(), "Submit request should succeed with valid credential");
+        assert!(
+            result.is_ok(),
+            "Submit request should succeed with valid credential"
+        );
         let ((request, client_state), nym) = result.unwrap();
 
         // Verify the request is valid
@@ -270,15 +280,24 @@ mod tests {
             age_range,
             measurement_count_range,
         );
-        assert!(server_result.is_ok(), "Server should handle submit request successfully");
+        assert!(
+            server_result.is_ok(),
+            "Server should handle submit request successfully"
+        );
         let response = server_result.unwrap();
 
         // Test user handling of server response
         let handle_result = user_state.handle_submit_response(client_state, response);
-        assert!(handle_result.is_ok(), "User should handle submit response successfully");
+        assert!(
+            handle_result.is_ok(),
+            "User should handle submit response successfully"
+        );
 
         // Verify credential was updated
-        assert!(user_state.credential.is_some(), "User should still have credential");
+        assert!(
+            user_state.credential.is_some(),
+            "User should still have credential"
+        );
         let updated_cred = user_state.credential.as_ref().unwrap();
 
         // Verify measurement count was incremented

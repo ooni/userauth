@@ -6,8 +6,8 @@
  * - measurement_count: All new accounts will begin with 0
 */
 
-use super::{ServerState, UserState};
 use super::{Scalar, G};
+use super::{ServerState, UserState};
 use cmz::*;
 use group::Group;
 use rand::{CryptoRng, RngCore};
@@ -58,7 +58,10 @@ impl UserState {
         let replybytes = rep.as_bytes();
         let recvreply = open_registration::Reply::try_from(&replybytes[..]).unwrap();
         match state.finalize(recvreply) {
-            Ok(cred) => {self.credential = Some(cred.clone()); Ok(())},
+            Ok(cred) => {
+                self.credential = Some(cred.clone());
+                Ok(())
+            }
             Err(_e) => Err(CMZError::IssProofFailed),
         }
     }
@@ -107,14 +110,27 @@ mod tests {
         let (request, client_state) = result.unwrap();
 
         let server_response = server_state.open_registration(request);
-        assert!(server_response.is_ok(), "Server should process registration request successfully");
+        assert!(
+            server_response.is_ok(),
+            "Server should process registration request successfully"
+        );
         let response = server_response.unwrap();
 
         let result = user_state.handle_response(client_state, response);
-        assert!(result.is_ok(), "User should handle server response successfully");
-        assert!(user_state.credential.is_some(), "User should receive a valid credential");
+        assert!(
+            result.is_ok(),
+            "User should handle server response successfully"
+        );
+        assert!(
+            user_state.credential.is_some(),
+            "User should receive a valid credential"
+        );
 
-        assert_ne!(user_state.credential.as_ref().unwrap().nym_id, Some(Scalar::ZERO), "Nym ID should be non-zero after registration");
+        assert_ne!(
+            user_state.credential.as_ref().unwrap().nym_id,
+            Some(Scalar::ZERO),
+            "Nym ID should be non-zero after registration"
+        );
     }
 
     #[test]
