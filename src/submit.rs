@@ -9,6 +9,8 @@ use group::Group;
 use rand::{CryptoRng, RngCore};
 use sha2::Sha512;
 
+const SESSION_ID: &[u8] = b"submit";
+
 muCMZProtocol!(submit<min_age_today, max_age, min_measurement_count, max_measurement_count>,
     Old: UserAuthCredential { nym_id: H, age: H, measurement_count: H},
     New: UserAuthCredential { nym_id: H, age: H, measurement_count: H},
@@ -18,8 +20,8 @@ muCMZProtocol!(submit<min_age_today, max_age, min_measurement_count, max_measure
     // NYM evaluation function
     // TODO: Fix syntax for group element equations
     // Old.nym_id * DOMAIN = NYM,
-    [min_age_today..max_age].contains(Old.age),
-    [min_measurement_count..max_measurement_count].contains(Old.measurement_count)
+    (min_age_today..=max_age).contains(Old.age),
+    (min_measurement_count..=max_measurement_count).contains(Old.measurement_count)
 );
 
 impl UserState {
@@ -113,7 +115,7 @@ impl UserState {
             max_measurement_count: measurement_count_range.end.into(),
         };
 
-        match submit::prepare(rng, &Old, New, &params) {
+        match submit::prepare(rng, SESSION_ID, &Old, New, &params) {
             Ok(req_state) => Ok((req_state, NYM)),
             Err(_) => Err(CredentialError::CMZError(CMZError::CliProofFailed)),
         }
@@ -160,6 +162,7 @@ impl ServerState {
         let server_sk = self.sk.clone();
         match submit::handle(
             rng,
+            SESSION_ID,
             recvreq,
             move |Old: &mut UserAuthCredential, New: &mut UserAuthCredential| {
                 // Set the private key for the credentials - this is essential for the protocol

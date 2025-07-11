@@ -13,6 +13,8 @@ use group::Group;
 use rand::{CryptoRng, RngCore};
 use sha2::Sha512;
 
+const SESSION_ID: &[u8] = b"registration";
+
 CMZ! { UserAuthCredential:
     nym_id,
     age,
@@ -42,7 +44,7 @@ impl UserState {
         UAC.age = Some(Scalar::ZERO);
         UAC.measurement_count = Some(Scalar::ZERO);
 
-        match open_registration::prepare(rng, UAC) {
+        match open_registration::prepare(rng, SESSION_ID, UAC) {
             Ok(req_state) => Ok(req_state),
             Err(_) => Err(CMZError::CliProofFailed),
         }
@@ -78,6 +80,7 @@ impl ServerState {
         let recvreq = open_registration::Request::try_from(&reqbytes[..]).unwrap();
         match open_registration::handle(
             &mut rng,
+            SESSION_ID,
             recvreq,
             |UAC: &mut UserAuthCredential| {
                 UAC.set_privkey(&self.sk);
