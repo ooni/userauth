@@ -11,15 +11,14 @@ use sha2::Sha512;
 
 const SESSION_ID: &[u8] = b"submit";
 
-muCMZProtocol!(submit<min_age_today, max_age, min_measurement_count, max_measurement_count>,
+muCMZProtocol!(submit<min_age_today, max_age, min_measurement_count,
+        max_measurement_count, @DOMAIN, @NYM>,
     Old: UserAuthCredential { nym_id: H, age: H, measurement_count: H},
     New: UserAuthCredential { nym_id: H, age: H, measurement_count: H},
     Old.nym_id = New.nym_id,
     Old.age = New.age,
     New.measurement_count = Old.measurement_count + 1,
-    // NYM evaluation function
-    // TODO: Fix syntax for group element equations
-    // Old.nym_id * DOMAIN = NYM,
+    NYM = Old.nym_id * DOMAIN,
     (min_age_today..=max_age).contains(Old.age),
     (min_measurement_count..=max_measurement_count).contains(Old.measurement_count)
 );
@@ -44,8 +43,7 @@ impl UserState {
                 String::from("No credential available"),
             ))?;
 
-        // TODO: Implement domain-specific generator and NYM computation
-        // when group element equations are supported in the macro
+        // Domain-specific generator and NYM computation
         let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
         let DOMAIN = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
         let NYM = Old.nym_id.unwrap() * DOMAIN;
@@ -113,6 +111,8 @@ impl UserState {
             max_age: age_range.end.into(),
             min_measurement_count: measurement_count_range.start.into(),
             max_measurement_count: measurement_count_range.end.into(),
+            DOMAIN,
+            NYM,
         };
 
         match submit::prepare(rng, SESSION_ID, &Old, New, &params) {
@@ -143,20 +143,24 @@ impl ServerState {
         &mut self,
         rng: &mut (impl RngCore + CryptoRng),
         req: submit::Request,
-        _nym: RistrettoPoint,
-        _probe_cc: &str,
-        _probe_asn: &str,
+        nym: RistrettoPoint,
+        probe_cc: &str,
+        probe_asn: &str,
         age_range: std::ops::Range<u32>,
         measurement_count_range: std::ops::Range<u32>,
     ) -> Result<submit::Reply, CMZError> {
         let reqbytes = req.as_bytes();
 
         let recvreq = submit::Request::try_from(&reqbytes[..]).unwrap();
+        let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
+        let DOMAIN = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
         let params = submit::Params {
             min_age_today: age_range.start.into(),
             max_age: age_range.end.into(),
             min_measurement_count: measurement_count_range.start.into(),
             max_measurement_count: measurement_count_range.end.into(),
+            DOMAIN,
+            NYM: nym,
         };
 
         let server_sk = self.sk.clone();
