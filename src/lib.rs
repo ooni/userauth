@@ -66,6 +66,11 @@ impl UserState {
             credential: None,
         }
     }
+
+    /// Get a reference to the current credential
+    pub fn get_credential(&self) -> Option<&UserAuthCredential> {
+        self.credential.as_ref()
+    }
 }
 
 // Try to extract a u32 from a Scalar
