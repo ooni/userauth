@@ -4,7 +4,6 @@ use super::{scalar_u32, ServerState, UserState, G};
 use crate::errors::CredentialError;
 use crate::registration::UserAuthCredential;
 use cmz::*;
-use curve25519_dalek::RistrettoPoint;
 use group::Group;
 use rand::{CryptoRng, RngCore};
 use sha2::Sha512;
@@ -32,7 +31,7 @@ impl UserState {
         probe_asn: String,
         age_range: std::ops::Range<u32>,
         measurement_count_range: std::ops::Range<u32>,
-    ) -> Result<((submit::Request, submit::ClientState), RistrettoPoint), CredentialError> {
+    ) -> Result<((submit::Request, submit::ClientState), [u8; 32]), CredentialError> {
         cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
 
         // Get the current credential
@@ -116,7 +115,7 @@ impl UserState {
         };
 
         match submit::prepare(rng, SESSION_ID, &Old, New, &params) {
-            Ok(req_state) => Ok((req_state, NYM)),
+            Ok(req_state) => Ok((req_state, NYM.compress().to_bytes())),
             Err(_) => Err(CredentialError::CMZError(CMZError::CliProofFailed)),
         }
     }
@@ -143,7 +142,7 @@ impl ServerState {
         &mut self,
         rng: &mut (impl RngCore + CryptoRng),
         req: submit::Request,
-        _nym: RistrettoPoint,
+        _nym: &[u8],
         _probe_cc: &str,
         _probe_asn: &str,
         age_range: std::ops::Range<u32>,
@@ -270,14 +269,14 @@ mod tests {
         // Verify the request is valid
         assert!(request.as_bytes().len() > 0, "Request should have content");
 
-        // Verify NYM is computed
-        assert_ne!(nym, G::identity(), "NYM should not be identity");
+        // Verify NYM is computed (check it's not all zeros)
+        assert_ne!(&nym, &[0u8; 32], "NYM should not be all zeros");
 
         // Test server handling of submit request
         let server_result = server_state.handle_submit(
             rng,
             request,
-            nym,
+            &nym,
             &probe_cc,
             &probe_asn,
             age_range,

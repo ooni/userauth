@@ -71,8 +71,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Domain-specific pseudonym computed");
 
     // Show the NYM as hex
-    let nym_bytes = nym.compress().to_bytes();
-    println!("   NYM (hex): {}", hex::encode(&nym_bytes));
+    println!("   NYM (hex): {}", hex::encode(&nym));
 
     // Convert to bytes
     let submit_request_bytes = submit_request.as_bytes();
@@ -82,7 +81,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let submit_response = server.handle_submit(
         &mut rng,
         submit_request,
-        nym,
+        &nym,
         &probe_cc,
         &probe_asn,
         age_range,
@@ -128,13 +127,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Different domain produces different pseudonym");
 
     // Show the second NYM as hex
-    let nym2_bytes = nym2.compress().to_bytes();
-    println!("   NYM (hex): {}", hex::encode(&nym2_bytes));
+    println!("   NYM (hex): {}", hex::encode(&nym2));
 
     let submit_response2 = server.handle_submit(
         &mut rng,
         submit_request2,
-        nym2,
+        &nym2,
         &probe_cc2,
         &probe_asn2,
         age_range2,
