@@ -3,6 +3,10 @@ name = "ooni"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "example"
+path = "src/bin/example.rs"
+
 [dependencies]
 cmz = { version = "0.1.0", path = "../cmz" }
 sigma_compiler = { version = "0.1.0", path = "../sigma_compiler" }
