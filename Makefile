@@ -1,7 +1,7 @@
 include:
 	mkdir -p include/
-	cd include && git clone gogs@git-crysp.uwaterloo.ca:SigmaProtocol/cmz.git
-	cd include && git clone gogs@git-crysp.uwaterloo.ca:SigmaProtocol/sigma_compiler.git
-	cd include && git clone gogs@git-crysp.uwaterloo.ca:SigmaProtocol/sigma.git
+	cd include && git clone git@github.com:ooni/cmz.git
+	cd include && git clone git@github.com:ooni/sigma_compiler.git
+	cd include && git clone https://github.com/mmaker/sigma-rs.git
 
 .PHONY: include
