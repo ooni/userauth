@@ -1,5 +1,5 @@
-use ooni::{ServerState, UserState, scalar_u32};
 use hex;
+use ooni::{scalar_u32, ServerState, UserState};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = rand::thread_rng();
@@ -41,12 +41,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Print initial credential attributes
     println!("\n   === Initial Credential Attributes ===");
     if let Some(cred) = user.get_credential() {
-        println!("   - nym_id: {} (kept secret by user)",
-            hex::encode(cred.nym_id.unwrap().to_bytes()));
-        println!("   - age: {} (days since epoch)",
-            scalar_u32(&cred.age.unwrap()).unwrap());
-        println!("   - measurement_count: {}",
-            scalar_u32(&cred.measurement_count.unwrap()).unwrap());
+        println!(
+            "   - nym_id: {} (kept secret by user)",
+            hex::encode(cred.nym_id.unwrap().to_bytes())
+        );
+        println!(
+            "   - age: {} (days since epoch)",
+            scalar_u32(&cred.age.unwrap()).unwrap()
+        );
+        println!(
+            "   - measurement_count: {}",
+            scalar_u32(&cred.measurement_count.unwrap()).unwrap()
+        );
     }
 
     // 4. Submit: User creates anonymous report
@@ -99,12 +105,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Print updated credential attributes
     println!("\n   === Updated Credential Attributes ===");
     if let Some(cred) = user.get_credential() {
-        println!("   - nym_id: {} (unchanged)",
-            hex::encode(cred.nym_id.unwrap().to_bytes()));
-        println!("   - age: {} (unchanged)",
-            scalar_u32(&cred.age.unwrap()).unwrap());
-        println!("   - measurement_count: {} (incremented)",
-            scalar_u32(&cred.measurement_count.unwrap()).unwrap());
+        println!(
+            "   - nym_id: {} (unchanged)",
+            hex::encode(cred.nym_id.unwrap().to_bytes())
+        );
+        println!(
+            "   - age: {} (unchanged)",
+            scalar_u32(&cred.age.unwrap()).unwrap()
+        );
+        println!(
+            "   - measurement_count: {} (incremented)",
+            scalar_u32(&cred.measurement_count.unwrap()).unwrap()
+        );
     }
 
     // 5. Demonstrate multiple submissions
@@ -144,12 +156,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Print final credential attributes
     println!("\n   === Final Credential Attributes ===");
     if let Some(cred) = user.get_credential() {
-        println!("   - nym_id: {} (unchanged)",
-            hex::encode(cred.nym_id.unwrap().to_bytes()));
-        println!("   - age: {} (unchanged)",
-            scalar_u32(&cred.age.unwrap()).unwrap());
-        println!("   - measurement_count: {} (incremented again)",
-            scalar_u32(&cred.measurement_count.unwrap()).unwrap());
+        println!(
+            "   - nym_id: {} (unchanged)",
+            hex::encode(cred.nym_id.unwrap().to_bytes())
+        );
+        println!(
+            "   - age: {} (unchanged)",
+            scalar_u32(&cred.age.unwrap()).unwrap()
+        );
+        println!(
+            "   - measurement_count: {} (incremented again)",
+            scalar_u32(&cred.measurement_count.unwrap()).unwrap()
+        );
     }
 
     Ok(())

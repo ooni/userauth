@@ -22,8 +22,6 @@ pub struct ServerState {
     pp: CMZPubkey<G>,
 }
 
-
-
 pub struct UserState {
     /// The public parameters for the client
     pub pp: CMZPubkey<G>,
@@ -54,7 +52,6 @@ impl ServerState {
             .try_into()
             .unwrap()
     }
-
 }
 
 impl UserState {
