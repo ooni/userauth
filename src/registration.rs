@@ -34,16 +34,6 @@ impl UserState {
         cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
 
         let mut UAC = UserAuthCredential::using_pubkey(&self.pp);
-        // nym_id is a random scalar that the user will keep secret but re-randomize at each request to
-        // the OA
-        // Generate random generic scalar
-        let const_nym = Scalar::random(rng);
-        UAC.nym_id = Some(const_nym);
-        // For registration, age and measurement_count will be set by the server
-        // But we need to provide some initial values for the protocol
-        UAC.age = Some(Scalar::ZERO);
-        UAC.measurement_count = Some(Scalar::ZERO);
-
         match open_registration::prepare(rng, SESSION_ID, UAC) {
             Ok(req_state) => Ok(req_state),
             Err(_) => Err(CMZError::CliProofFailed),
