@@ -1,5 +1,5 @@
 use hex;
-use ooni::{scalar_u32, ServerState, UserState};
+use ooniauth_core::{scalar_u32, ServerState, UserState};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = rand::thread_rng();
