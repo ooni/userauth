@@ -1,0 +1,28 @@
+[package]
+name = "ooniauth-core"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+cmz = { version = "0.1.0", path = "../include/cmz" }
+sigma_compiler = { version = "0.1.0", path = "../include/sigma_compiler" }
+curve25519-dalek = { version = "4", features = ["digest", "group", "rand_core", "serde"] }
+ff = "0.13.1"
+group = "0.13.0"
+rand = "0.8.5"
+serde = "1.0.219"
+serde_with = "3.12.0"
+bincode = "1"
+serde_bytes = "0.11.17"
+sha2 = "0.10.9"
+chrono = "0.4.41"
+time = "0.3.41"
+subtle = "2.6.1"
+thiserror = "2.0.12"
+syn = "2.0.103"
+hex = "0.4"
+
+[[example]]
+name = "basic_usage"
+test = true
