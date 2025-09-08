@@ -36,7 +36,6 @@ impl UserState {
        let mut UAC = UserAuthCredential::using_pubkey(&self.pp);
        // For registration, age and measurement_count will be set by the server
        // But we need to provide some initial values for the protocol
-       UAC.age = Some(Scalar::ZERO);
        UAC.measurement_count = Some(Scalar::ZERO);
         match open_registration::prepare(rng, SESSION_ID, UAC) {
             Ok(req_state) => Ok(req_state),
