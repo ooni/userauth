@@ -220,7 +220,7 @@ name = "cmz"
 version = "0.1.0"
 dependencies = [
  "bincode",
- "cmzcred_derive",
+ "cmz_derive",
  "curve25519-dalek",
  "ff",
  "generic_static",
@@ -237,9 +237,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "cmzcred_derive"
+name = "cmz_core"
 version = "0.1.0"
 dependencies = [
+ "clap",
+ "darling",
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.103",
+]
+
+[[package]]
+name = "cmz_derive"
+version = "0.1.0"
+dependencies = [
+ "cmz_core",
  "darling",
  "proc-macro2",
  "quote",
