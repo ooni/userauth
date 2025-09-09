@@ -1,5 +1,3 @@
 [workspace]
-members = [
-    "ooniauth-core"
-]
+members = ["ooniauth-core", "ooniauth-py"]
 resolver = "2"

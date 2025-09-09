@@ -220,7 +220,7 @@ name = "cmz"
 version = "0.1.0"
 dependencies = [
  "bincode",
- "cmz_derive",
+ "cmzcred_derive",
  "curve25519-dalek",
  "ff",
  "generic_static",
@@ -237,22 +237,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "cmz_core"
+name = "cmzcred_derive"
 version = "0.1.0"
 dependencies = [
- "clap",
- "darling",
- "prettyplease",
- "proc-macro2",
- "quote",
- "syn 2.0.103",
-]
-
-[[package]]
-name = "cmz_derive"
-version = "0.1.0"
-dependencies = [
- "cmz_core",
  "darling",
  "proc-macro2",
  "quote",
@@ -698,6 +685,13 @@ dependencies = [
  "syn 2.0.103",
  "thiserror 2.0.12",
  "time",
+]
+
+[[package]]
+name = "ooniauth-py"
+version = "0.1.0"
+dependencies = [
+ "ooniauth-core",
 ]
 
 [[package]]
