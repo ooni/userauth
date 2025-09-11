@@ -19,8 +19,10 @@ pub mod submit;
 pub struct ServerState {
     /// The private key for the main User Auth credential
     sk: CMZPrivkey<G>,
-    pp: CMZPubkey<G>,
+    pp: PublicParameters,
 }
+
+pub type PublicParameters = CMZPubkey<G>;
 
 pub struct UserState {
     /// The public parameters for the client
@@ -39,7 +41,7 @@ impl ServerState {
     }
 
     /// Get the public parameters for credential operations
-    pub fn public_parameters(&self) -> CMZPubkey<G> {
+    pub fn public_parameters(&self) -> PublicParameters {
         self.pp.clone()
     }
 

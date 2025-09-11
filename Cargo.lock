@@ -805,6 +805,7 @@ dependencies = [
 name = "ooniauth-py"
 version = "0.1.0"
 dependencies = [
+ "bincode",
  "ooniauth-core",
  "pyo3",
  "pyo3-stub-gen",

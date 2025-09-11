@@ -6,6 +6,11 @@ import builtins
 class ServerState:
     ...
 
+class UserState:
+    def __new__(cls, public_params:bytes) -> UserState: ...
+
+def get_public_parameters(server_state:ServerState) -> bytes: ...
+
 def sum_as_string(a:builtins.int, b:builtins.int) -> builtins.str:
     r"""
     Formats the sum of two numbers as string.
