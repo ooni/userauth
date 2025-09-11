@@ -808,6 +808,7 @@ dependencies = [
  "ooniauth-core",
  "pyo3",
  "pyo3-stub-gen",
+ "rand",
 ]
 
 [[package]]

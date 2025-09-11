@@ -10,7 +10,7 @@ sigma_compiler = { version = "0.1.0", path = "../include/sigma_compiler" }
 curve25519-dalek = { version = "4", features = ["digest", "group", "rand_core", "serde"] }
 ff = "0.13.1"
 group = "0.13.0"
-rand = "0.8.5"
+rand = {workspace = true} 
 serde = "1.0.219"
 serde_with = "3.12.0"
 bincode = "1"
