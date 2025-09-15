@@ -1,14 +1,7 @@
 use pyo3::{prelude::*, types::PyBytes};
 use pyo3_stub_gen::{define_stub_info_gatherer, derive::{gen_stub_pyclass, gen_stub_pyfunction, gen_stub_pymethods}};
-use ooniauth_core::{self as ooni, PublicParameters};
+use ooniauth_core::{self as ooni, PublicParameters, SecretKey};
 use rand;
-
-/// Formats the sum of two numbers as string.
-#[gen_stub_pyfunction]
-#[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok((a + b).to_string())
-}
 
 #[gen_stub_pyclass]
 #[pyclass]
@@ -16,6 +9,7 @@ pub struct ServerState {
     pub state : ooni::ServerState
 }
 
+#[gen_stub_pymethods]
 #[pymethods]
 impl ServerState  {
     
@@ -25,6 +19,34 @@ impl ServerState  {
         Self {
             state : ooni::ServerState::new(&mut rng),
         }
+    }
+
+    /* Create a new server state from binary-serialized public and private keys
+     
+        This is meant to be used by the server, so it can store the keys somewhere and recreate the 
+        state when needed
+     */
+    #[staticmethod]
+    fn from_creds(py: Python<'_>, public_parameters: Py<PyBytes>, secret_key : Py<PyBytes>) -> Self {
+        // TODO better error handling
+        let pp = bincode::deserialize::<PublicParameters>(&public_parameters.as_bytes(py)).unwrap_or_else(|e| panic!("Could not deserialize public parameters: {e}"));
+        let sk = bincode::deserialize::<SecretKey>(&secret_key.as_bytes(py)).unwrap_or_else(|e| panic!("Could not deserialize public parameters: {e}"));
+
+        Self {
+            state : ooni::ServerState::from_creds(sk, pp)
+        }
+    }
+
+    fn get_secret_key(&self, py: Python<'_>) -> Py<PyBytes> {
+        // TODO better error handling
+        let sk = bincode::serialize(&self.state.get_secret_key()).unwrap_or_else(|e| panic!("Unable to serialize secret_key: {e}"));
+        PyBytes::new(py, &sk).into()
+    }
+
+    fn get_public_parameters(&self, py: Python<'_>) -> Py<PyBytes> {
+        // TODO better error handling
+        let sk = bincode::serialize(&self.state.get_public_parameters()).unwrap_or_else(|e| panic!("Unable to serialize public parameters: {e}"));
+        PyBytes::new(py, &sk).into()
     }
 }
 
@@ -58,7 +80,6 @@ pub fn get_public_parameters(py: Python<'_>, server_state : &ServerState) -> Py<
 /// A Python module implemented in Rust.
 #[pymodule]
 fn ooniauth_py(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     m.add_function(wrap_pyfunction!(get_public_parameters, m)?)?;
     m.add_class::<ServerState>()?;
     m.add_class::<UserState>()?;

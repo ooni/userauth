@@ -18,15 +18,16 @@ pub mod submit;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ServerState {
     /// The private key for the main User Auth credential
-    sk: CMZPrivkey<G>,
+    sk: SecretKey,
     pp: PublicParameters,
 }
 
 pub type PublicParameters = CMZPubkey<G>;
+pub type SecretKey = CMZPrivkey<G>;
 
 pub struct UserState {
     /// The public parameters for the client
-    pub pp: CMZPubkey<G>,
+    pub pp: PublicParameters,
     pub(crate) credential: Option<UserAuthCredential>,
 }
 
@@ -38,6 +39,18 @@ impl ServerState {
         // credential with 'true' to indicate uCMZ
         let (sk, pp) = UserAuthCredential::gen_keys(rng, true);
         Self { sk, pp }
+    }
+
+    pub fn get_secret_key(&self) -> &SecretKey {
+        &self.sk
+    }
+
+    pub fn get_public_parameters(&self) -> &PublicParameters {
+        &self.pp
+    }
+
+    pub fn from_creds(sk : SecretKey, pp : PublicParameters) -> Self {
+        Self {sk, pp}
     }
 
     /// Get the public parameters for credential operations
