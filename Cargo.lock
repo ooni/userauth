@@ -806,10 +806,12 @@ name = "ooniauth-py"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "cmz",
  "ooniauth-core",
  "pyo3",
  "pyo3-stub-gen",
  "rand",
+ "serde",
 ]
 
 [[package]]
