@@ -1,9 +1,9 @@
 use pyo3::prelude::*;
 use pyo3_stub_gen::define_stub_info_gatherer;
 
-mod utils;
-pub mod protocol;
 pub mod exceptions;
+pub mod protocol;
+mod utils;
 
 pub use protocol::*;
 
