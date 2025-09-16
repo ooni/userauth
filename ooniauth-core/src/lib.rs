@@ -59,7 +59,7 @@ impl ServerState {
     }
 
     /// Get today's (real or simulated) date as u32
-    pub fn today(&self) -> u32 {
+    pub fn today() -> u32 {
         // We will not encounter negative Julian dates (~6700 years ago)
         // or ones larger than 32 bits
         (time::OffsetDateTime::now_utc().date())

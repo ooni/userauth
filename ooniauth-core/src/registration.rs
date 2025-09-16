@@ -78,7 +78,7 @@ impl ServerState {
             |UAC: &mut UserAuthCredential| {
                 UAC.set_privkey(&self.sk);
                 UAC.measurement_count = Some(Scalar::ZERO);
-                UAC.age = Some(self.today().into());
+                UAC.age = Some(ServerState::today().into());
                 Ok(())
             },
             |_UAC: &UserAuthCredential| Ok(()),
@@ -97,7 +97,7 @@ mod tests {
     fn test_registration() {
         let rng = &mut rand::thread_rng();
         // Initialize group first for gen_keys
-        let mut server_state = ServerState::new(rng);
+        let server_state = ServerState::new(rng);
         // Note: request() will call cmz_group_init again, but that's okay
         let mut user_state = UserState::new(server_state.public_parameters());
 
