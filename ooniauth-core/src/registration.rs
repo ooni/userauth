@@ -64,7 +64,7 @@ impl UserState {
 
 impl ServerState {
     pub fn open_registration(
-        &mut self,
+        &self,
         req: open_registration::Request,
     ) -> Result<open_registration::Reply, CMZError> {
         let mut rng = rand::thread_rng();

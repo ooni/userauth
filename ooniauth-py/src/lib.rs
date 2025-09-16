@@ -52,7 +52,7 @@ impl ServerState {
     }
 
     fn handle_registration_request(
-        &mut self,
+        &self,
         py: Python<'_>,
         registration_request: Py<PyBytes>,
     ) -> Py<PyBytes> {
