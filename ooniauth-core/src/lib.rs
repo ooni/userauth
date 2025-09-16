@@ -41,11 +41,11 @@ impl ServerState {
         Self { sk, pp }
     }
 
-    pub fn get_secret_key(&self) -> &SecretKey {
+    pub fn secret_key_ref(&self) -> &SecretKey {
         &self.sk
     }
 
-    pub fn get_public_parameters(&self) -> &PublicParameters {
+    pub fn public_parameters_ref(&self) -> &PublicParameters {
         &self.pp
     }
 
