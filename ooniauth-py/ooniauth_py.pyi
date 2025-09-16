@@ -2,6 +2,7 @@
 # ruff: noqa: E501, F401
 
 import builtins
+import typing
 
 class ServerState:
     def __new__(cls) -> ServerState: ...

@@ -140,6 +140,10 @@ impl UserState {
         }
     }
 
+    pub fn get_credential(&self, py : Python<'_>) -> Option<Py<PyBytes>> {
+        self.state.get_credential().map(|c|to_pybytes(py,c))
+    }
+
     pub fn make_register_request(&mut self, py: Python<'_>) -> Py<PyBytes> {
         let mut rng = rand::thread_rng();
         // TODO Better error handling
@@ -193,6 +197,17 @@ impl UserState {
                 panic!("Error creating submit request: {e}")
             }
         }
+    }
+
+    pub fn handle_submit_response(&mut self, py: Python<'_>, response: Py<PyBytes>) {
+        let response = from_pybytes::<submit::Reply>(py, &response);
+        let submit_state = self
+            .submit_client_state
+            .take()
+            .expect("Missing submit state");
+        self.state
+            .handle_submit_response(submit_state, response)
+            .unwrap_or_else(|e| panic!("Error trying to handle response: {e}"));
     }
 }
 
