@@ -34,13 +34,13 @@ impl ServerState {
        state when needed
     */
     #[staticmethod]
-    fn from_creds(py: Python<'_>, public_parameters: Py<PyBytes>, secret_key: Py<PyBytes>) -> Self {
-        let pp = from_pybytes(py, &public_parameters);
-        let sk = from_pybytes(py, &secret_key);
+    fn from_creds(py: Python<'_>, public_parameters: Py<PyBytes>, secret_key: Py<PyBytes>) -> PyResult<Self> {
+        let pp = from_pybytes(py, &public_parameters)?;
+        let sk = from_pybytes(py, &secret_key)?;
 
-        Self {
+        Ok(Self {
             state: ooni::ServerState::from_creds(sk, pp),
-        }
+        })
     }
 
     fn get_secret_key(&self, py: Python<'_>) -> Py<PyBytes> {
@@ -55,13 +55,13 @@ impl ServerState {
         &self,
         py: Python<'_>,
         registration_request: Py<PyBytes>,
-    ) -> Py<PyBytes> {
-        let req = from_pybytes(py, &registration_request);
+    ) -> PyResult<Py<PyBytes>> {
+        let req = from_pybytes(py, &registration_request)?;
         let reply = self
             .state
             .open_registration(req)
             .unwrap_or_else(|e| panic!("Error openning registration: {e}"));
-        to_pybytes(py, &reply)
+        Ok(to_pybytes(py, &reply))
     }
 
     #[staticmethod]
@@ -127,13 +127,13 @@ pub struct UserState {
 #[pymethods]
 impl UserState {
     #[new]
-    pub fn new(py: Python<'_>, public_params: Py<PyBytes>) -> Self {
-        let params = from_pybytes(py, &public_params);
-        Self {
+    pub fn new(py: Python<'_>, public_params: Py<PyBytes>) -> PyResult<Self> {
+        let params = from_pybytes(py, &public_params)?;
+        Ok(Self {
             state: ooni::UserState::new(params),
             registration_client_state: None,
             submit_client_state: None,
-        }
+        })
     }
 
     pub fn get_credential(&self, py: Python<'_>) -> Option<Py<PyBytes>> {
@@ -151,8 +151,8 @@ impl UserState {
         to_pybytes(py, &req)
     }
 
-    pub fn handle_registration_response(&mut self, py: Python<'_>, resp: Py<PyBytes>) {
-        let response = from_pybytes::<open_registration::Reply>(py, &resp);
+    pub fn handle_registration_response(&mut self, py: Python<'_>, resp: Py<PyBytes>) -> PyResult<()> {
+        let response = from_pybytes::<open_registration::Reply>(py, &resp)?;
         let client_state = self
             .registration_client_state
             .take()
@@ -160,6 +160,7 @@ impl UserState {
         self.state
             .handle_response(client_state, response)
             .unwrap_or_else(|e| panic!("Could not handle registration response: {e}"));
+        Ok(())
     }
 
     pub fn make_submit_request(
@@ -195,8 +196,8 @@ impl UserState {
         }
     }
 
-    pub fn handle_submit_response(&mut self, py: Python<'_>, response: Py<PyBytes>) {
-        let response = from_pybytes::<submit::Reply>(py, &response);
+    pub fn handle_submit_response(&mut self, py: Python<'_>, response: Py<PyBytes>) -> PyResult<()> {
+        let response = from_pybytes::<submit::Reply>(py, &response)?;
         let submit_state = self
             .submit_client_state
             .take()
@@ -204,10 +205,8 @@ impl UserState {
         self.state
             .handle_submit_response(submit_state, response)
             .unwrap_or_else(|e| panic!("Error trying to handle response: {e}"));
-    }
 
-    pub fn scream(&self) -> PyResult<()> {
-        Err(OoniErr::SerializationFailed{reason: "AAAAAAA".into()}.into())
+        Ok(())
     }
 }
 
