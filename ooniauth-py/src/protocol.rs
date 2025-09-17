@@ -7,7 +7,8 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 
-use crate::utils::{from_pybytes, to_pybytes};
+use crate::{utils::{from_pybytes, to_pybytes}};
+use crate::exceptions::OoniErr;
 
 #[gen_stub_pyclass]
 #[pyclass]
@@ -17,6 +18,7 @@ pub struct ServerState {
 
 #[gen_stub_pymethods]
 #[pymethods]
+
 impl ServerState {
     #[new]
     pub fn new() -> Self {
@@ -202,6 +204,10 @@ impl UserState {
         self.state
             .handle_submit_response(submit_state, response)
             .unwrap_or_else(|e| panic!("Error trying to handle response: {e}"));
+    }
+
+    pub fn scream(&self) -> PyResult<()> {
+        Err(OoniErr::SerializationFailed{reason: "AAAAAAA".into()}.into())
     }
 }
 
