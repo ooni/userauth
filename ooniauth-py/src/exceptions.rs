@@ -1,7 +1,5 @@
 use pyo3::exceptions::PyValueError;
 use pyo3_stub_gen::create_exception;
-use pyo3_stub_gen::type_info::*;
-use pyo3_stub_gen::type_info;
 use pyo3::PyErr;
 
 
