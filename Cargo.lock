@@ -808,7 +808,6 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "cmz",
- "inventory",
  "ooniauth-core",
  "pyo3",
  "pyo3-stub-gen",
