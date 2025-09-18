@@ -28,11 +28,9 @@ impl ServerState {
         }
     }
 
-    /* Create a new server state from binary-serialized public and private keys
-
-       This is meant to be used by the server, so it can store the keys somewhere and recreate the
-       state when needed
-    */
+    /// Create a new server state from binary-serialized public and private keys
+    /// This is meant to be used by the server, so it can store the keys somewhere and recreate the
+    /// state when needed
     #[staticmethod]
     fn from_creds(
         py: Python<'_>,
@@ -155,6 +153,10 @@ impl UserState {
         Ok(to_pybytes(py, &req))
     }
 
+    /// Handle a registration response sent by the server, updating your credentials
+    /// 
+    /// Note that this function will only work if you previously called 
+    /// `make_registration_request`
     pub fn handle_registration_response(
         &mut self,
         py: Python<'_>,
@@ -202,6 +204,10 @@ impl UserState {
         })
     }
 
+    /// Handle a submit response sent by the server, updating your credentials
+    /// 
+    /// Note that this function will only work if you previously called 
+    /// `make_submit_request`
     pub fn handle_submit_response(
         &mut self,
         py: Python<'_>,
