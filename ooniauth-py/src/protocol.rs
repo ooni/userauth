@@ -149,13 +149,13 @@ impl UserState {
             .request(&mut rng)?;
 
         self.registration_client_state = Some(state);
-        
+
         Ok(to_pybytes(py, &req))
     }
 
     /// Handle a registration response sent by the server, updating your credentials
-    /// 
-    /// Note that this function will only work if you previously called 
+    ///
+    /// Note that this function will only work if you previously called
     /// `make_registration_request`
     pub fn handle_registration_response(
         &mut self,
@@ -205,8 +205,8 @@ impl UserState {
     }
 
     /// Handle a submit response sent by the server, updating your credentials
-    /// 
-    /// Note that this function will only work if you previously called 
+    ///
+    /// Note that this function will only work if you previously called
     /// `make_submit_request`
     pub fn handle_submit_response(
         &mut self,
