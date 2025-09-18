@@ -7,6 +7,7 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 
+use crate::exceptions::{OoniErr, OoniResult};
 use crate::utils::{from_pybytes, to_pybytes};
 
 #[gen_stub_pyclass]
@@ -37,7 +38,7 @@ impl ServerState {
         py: Python<'_>,
         public_parameters: Py<PyBytes>,
         secret_key: Py<PyBytes>,
-    ) -> PyResult<Self> {
+    ) -> OoniResult<Self> {
         let pp = from_pybytes(py, &public_parameters)?;
         let sk = from_pybytes(py, &secret_key)?;
 
@@ -58,12 +59,11 @@ impl ServerState {
         &self,
         py: Python<'_>,
         registration_request: Py<PyBytes>,
-    ) -> PyResult<Py<PyBytes>> {
+    ) -> OoniResult<Py<PyBytes>> {
         let req = from_pybytes(py, &registration_request)?;
         let reply = self
             .state
-            .open_registration(req)
-            .unwrap_or_else(|e| panic!("Error openning registration: {e}"));
+            .open_registration(req)?;
         Ok(to_pybytes(py, &reply))
     }
 
@@ -81,17 +81,18 @@ impl ServerState {
         probe_asn: Py<PyString>,
         age_range: Py<PyList>,
         measurement_count_range: Py<PyList>,
-    ) -> Py<PyBytes> {
+    ) -> OoniResult<Py<PyBytes>> {
+
         // Convert arguments from py types to rust types
         let nym = nym.as_bytes(py);
         let mut nym_32: [u8; 32] = [0; 32];
         nym_32.copy_from_slice(nym);
 
-        let request = bincode::deserialize::<submit::Request>(request.as_bytes(py))
-            .unwrap_or_else(|e| panic!("Error deserializing request: {e}"));
+        let request = from_pybytes::<submit::Request>(py, &request)?;
 
         let probe_cc = probe_cc.to_str(py).expect("Could not get str");
         let probe_asn = probe_asn.to_str(py).expect("Could not get str");
+
         let age_range = age_range
             .extract::<Vec<u32>>(py)
             .expect("could not get list");
@@ -111,10 +112,9 @@ impl ServerState {
                 probe_asn,
                 age_range[0]..age_range[1],
                 measurement_count_range[0]..measurement_count_range[1],
-            )
-            .unwrap_or_else(|e| panic!("Could not handle submit: {e}"));
+            )?;
 
-        to_pybytes(py, &result)
+        Ok(to_pybytes(py, &result))
     }
 }
 
@@ -130,7 +130,7 @@ pub struct UserState {
 #[pymethods]
 impl UserState {
     #[new]
-    pub fn new(py: Python<'_>, public_params: Py<PyBytes>) -> PyResult<Self> {
+    pub fn new(py: Python<'_>, public_params: Py<PyBytes>) -> OoniResult<Self> {
         let params = from_pybytes(py, &public_params)?;
         Ok(Self {
             state: ooni::UserState::new(params),
@@ -143,30 +143,33 @@ impl UserState {
         self.state.get_credential().map(|c| to_pybytes(py, c))
     }
 
-    pub fn make_registration_request(&mut self, py: Python<'_>) -> Py<PyBytes> {
+    pub fn make_registration_request(&mut self, py: Python<'_>) -> OoniResult<Py<PyBytes>> {
         let mut rng = rand::thread_rng();
-        // TODO Better error handling
+
         let (req, state) = self
             .state
-            .request(&mut rng)
-            .unwrap_or_else(|e| panic!("Couldn't make registration request: {e}"));
+            .request(&mut rng)?;
+
         self.registration_client_state = Some(state);
-        to_pybytes(py, &req)
+        
+        Ok(to_pybytes(py, &req))
     }
 
     pub fn handle_registration_response(
         &mut self,
         py: Python<'_>,
         resp: Py<PyBytes>,
-    ) -> PyResult<()> {
+    ) -> OoniResult<()> {
         let response = from_pybytes::<open_registration::Reply>(py, &resp)?;
+
         let client_state = self
             .registration_client_state
             .take()
             .expect("Trying to handle response without client state");
+
         self.state
-            .handle_response(client_state, response)
-            .unwrap_or_else(|e| panic!("Could not handle registration response: {e}"));
+            .handle_response(client_state, response)?;
+
         Ok(())
     }
 
@@ -176,46 +179,42 @@ impl UserState {
         probe_cc: Py<PyString>,
         probe_asn: Py<PyString>,
         emission_date: u32,
-    ) -> SubmitRequest {
+    ) -> OoniResult<SubmitRequest>{
         let probe_cc = probe_cc.to_str(py).expect("unable to get string");
         let probe_asn = probe_asn.to_str(py).expect("unable to get string");
 
         let mut rng = rand::thread_rng();
-        let result = self.state.submit_request(
+        let ((result, client_state), nym)= self.state.submit_request(
             &mut rng,
             probe_cc.into(),
             probe_asn.into(),
             (emission_date - 30)..(emission_date + 1),
             0..100,
-        );
+        )?;
 
-        match result {
-            Ok(((result, client_state), nym)) => {
-                self.submit_client_state = Some(client_state);
-                return SubmitRequest {
-                    nym: to_pybytes(py, &nym),
-                    request: to_pybytes(py, &result),
-                };
-            }
-            Err(e) => {
-                panic!("Error creating submit request: {e}")
-            }
-        }
+        self.submit_client_state = Some(client_state);
+
+        Ok(SubmitRequest {
+            nym: to_pybytes(py, &nym),
+            request: to_pybytes(py, &result),
+        })
     }
 
     pub fn handle_submit_response(
         &mut self,
         py: Python<'_>,
         response: Py<PyBytes>,
-    ) -> PyResult<()> {
+    ) -> OoniResult<()> {
         let response = from_pybytes::<submit::Reply>(py, &response)?;
+
         let submit_state = self
             .submit_client_state
             .take()
-            .expect("Missing submit state");
-        self.state
-            .handle_submit_response(submit_state, response)
-            .unwrap_or_else(|e| panic!("Error trying to handle response: {e}"));
+            .expect("Calling `handle_submit_response` without a submit client state. \
+                    Did you forget to call `make_submit_request` before?"
+                    );
+
+        self.state.handle_submit_response(submit_state, response)?;
 
         Ok(())
     }

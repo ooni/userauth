@@ -4,10 +4,22 @@
 import builtins
 import typing
 
-class AuthenticationFailed(builtins.ValueError):
+class CredentialError(builtins.Exception):
+    r"""
+    An authentication error
+    """
     ...
 
-class SerializationFailed(builtins.ValueError):
+class DeserializationFailed(builtins.Exception):
+    r"""
+    An error trying to deserialize a binary buffer
+    """
+    ...
+
+class ProtocolError(builtins.Exception):
+    r"""
+    An error performing the protocol
+    """
     ...
 
 class ServerState:
