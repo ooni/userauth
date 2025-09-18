@@ -1,8 +1,8 @@
 use cmz::CMZError;
-use ooniauth_core::errors as errors;
+use ooniauth_core::errors;
+use pyo3::PyErr;
 use pyo3::exceptions::PyException;
 use pyo3_stub_gen::create_exception;
-use pyo3::PyErr;
 use thiserror::Error;
 
 // Python excepions: This is what the user sees from the python side when running into an error
@@ -13,14 +13,14 @@ use thiserror::Error;
 // _ and -, it confuses itself and thinks that its a different module while writing in
 // the same resulting .pyi, deleting parts of the content
 
-create_exception!{
+create_exception! {
     ooniauth-py,
     ProtocolError,
     PyException,
     "An error performing the protocol"
 }
 
-create_exception!{
+create_exception! {
     ooniauth-py,
     DeserializationFailed,
     PyException,
@@ -28,27 +28,26 @@ create_exception!{
 }
 
 // TODO Q: should I create a new python exception per variant of errors::CredentialError?
-create_exception!{
+create_exception! {
     ooniauth-py,
     CredentialError,
     PyException,
     "An authentication error"
 }
 
-
-// The following errors are useful to map rust errors to their corresponding python exceptions 
+// The following errors are useful to map rust errors to their corresponding python exceptions
 // defined above
 
 #[derive(Debug, Error)]
 pub enum OoniErr {
     #[error("Protocol Error: {reason}")]
-    ProtocolError{reason: CMZError},
-    
+    ProtocolError { reason: CMZError },
+
     #[error("Credential Error: {reason}")]
-    CredentialError{reason: errors::CredentialError},
+    CredentialError { reason: errors::CredentialError },
 
     #[error("Deserialization Error: {reason}")]
-    DeserializationFailed{reason: String}
+    DeserializationFailed { reason: String },
 }
 
 pub type OoniResult<T> = Result<T, OoniErr>;
@@ -57,10 +56,12 @@ impl From<OoniErr> for PyErr {
     fn from(value: OoniErr) -> Self {
         // This function maps from rust error enums to their corresponding python exception
         match value {
-            OoniErr::ProtocolError{reason} => ProtocolError::new_err(format!("{reason}")),
-            OoniErr::DeserializationFailed {reason} => DeserializationFailed::new_err(reason),
-            OoniErr::CredentialError { reason: errors::CredentialError::CMZError(e) } => ProtocolError::new_err(format!("{e}")),
-            OoniErr::CredentialError { reason } => CredentialError::new_err(format!("{reason}"))
+            OoniErr::ProtocolError { reason } => ProtocolError::new_err(format!("{reason}")),
+            OoniErr::DeserializationFailed { reason } => DeserializationFailed::new_err(reason),
+            OoniErr::CredentialError {
+                reason: errors::CredentialError::CMZError(e),
+            } => ProtocolError::new_err(format!("{e}")),
+            OoniErr::CredentialError { reason } => CredentialError::new_err(format!("{reason}")),
         }
     }
 }

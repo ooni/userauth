@@ -59,9 +59,7 @@ impl ServerState {
         registration_request: Py<PyBytes>,
     ) -> OoniResult<Py<PyBytes>> {
         let req = from_pybytes(py, &registration_request)?;
-        let reply = self
-            .state
-            .open_registration(req)?;
+        let reply = self.state.open_registration(req)?;
         Ok(to_pybytes(py, &reply))
     }
 
@@ -80,7 +78,6 @@ impl ServerState {
         age_range: Py<PyList>,
         measurement_count_range: Py<PyList>,
     ) -> OoniResult<Py<PyBytes>> {
-
         // Convert arguments from py types to rust types
         let nym = nym.as_bytes(py);
         let mut nym_32: [u8; 32] = [0; 32];
@@ -100,19 +97,23 @@ impl ServerState {
 
         // Handle submission
         let mut rng = rand::thread_rng();
-        let result = self
-            .state
-            .handle_submit(
-                &mut rng,
-                request,
-                &nym_32,
-                probe_cc,
-                probe_asn,
-                age_range[0]..age_range[1],
-                measurement_count_range[0]..measurement_count_range[1],
-            )?;
+        let result = self.state.handle_submit(
+            &mut rng,
+            request,
+            &nym_32,
+            probe_cc,
+            probe_asn,
+            age_range[0]..age_range[1],
+            measurement_count_range[0]..measurement_count_range[1],
+        )?;
 
         Ok(to_pybytes(py, &result))
+    }
+}
+
+impl Default for ServerState {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -144,9 +145,7 @@ impl UserState {
     pub fn make_registration_request(&mut self, py: Python<'_>) -> OoniResult<Py<PyBytes>> {
         let mut rng = rand::thread_rng();
 
-        let (req, state) = self
-            .state
-            .request(&mut rng)?;
+        let (req, state) = self.state.request(&mut rng)?;
 
         self.registration_client_state = Some(state);
 
@@ -164,15 +163,12 @@ impl UserState {
     ) -> OoniResult<()> {
         let response = from_pybytes::<open_registration::Reply>(py, &resp)?;
 
-        let client_state = self
-            .registration_client_state
-            .take()
-            .expect("Calling `handle_registration_response` without a registration client state. \
-                    Did you forget to call `make_registration_request` before?"
-                );
+        let client_state = self.registration_client_state.take().expect(
+            "Calling `handle_registration_response` without a registration client state. \
+                    Did you forget to call `make_registration_request` before?",
+        );
 
-        self.state
-            .handle_response(client_state, response)?;
+        self.state.handle_response(client_state, response)?;
 
         Ok(())
     }
@@ -183,12 +179,12 @@ impl UserState {
         probe_cc: Py<PyString>,
         probe_asn: Py<PyString>,
         emission_date: u32,
-    ) -> OoniResult<SubmitRequest>{
+    ) -> OoniResult<SubmitRequest> {
         let probe_cc = probe_cc.to_str(py).expect("unable to get string");
         let probe_asn = probe_asn.to_str(py).expect("unable to get string");
 
         let mut rng = rand::thread_rng();
-        let ((result, client_state), nym)= self.state.submit_request(
+        let ((result, client_state), nym) = self.state.submit_request(
             &mut rng,
             probe_cc.into(),
             probe_asn.into(),
@@ -215,12 +211,10 @@ impl UserState {
     ) -> OoniResult<()> {
         let response = from_pybytes::<submit::Reply>(py, &response)?;
 
-        let submit_state = self
-            .submit_client_state
-            .take()
-            .expect("Calling `handle_submit_response` without a submit client state. \
-                    Did you forget to call `make_submit_request` before?"
-                    );
+        let submit_state = self.submit_client_state.take().expect(
+            "Calling `handle_submit_response` without a submit client state. \
+                    Did you forget to call `make_submit_request` before?",
+        );
 
         self.state.handle_submit_response(submit_state, response)?;
 

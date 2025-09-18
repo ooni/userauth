@@ -1,6 +1,6 @@
 use pyo3::{prelude::*, types::PyBytes};
 
-use crate::{exceptions::OoniErr, OoniResult};
+use crate::{OoniResult, exceptions::OoniErr};
 
 pub fn to_pybytes<T: serde::Serialize>(py: Python<'_>, value: &T) -> Py<PyBytes> {
     // We consider a bad serialization as a programming error since most of the times
@@ -16,9 +16,7 @@ pub fn from_pybytes<'a, T: serde::Deserialize<'a>>(
 ) -> OoniResult<T> {
     // We consider bad deserialization an user error, since most of the time
     // what we are deserializing comes from the user in python world
-    bincode::deserialize::<T>(bytes.as_bytes(py)).or_else(|e| {
-        Err(OoniErr::DeserializationFailed {
-            reason: e.to_string(),
-        })
+    bincode::deserialize::<T>(bytes.as_bytes(py)).map_err(|e| OoniErr::DeserializationFailed {
+        reason: e.to_string(),
     })
 }
