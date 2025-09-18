@@ -7,8 +7,7 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 
-use crate::{utils::{from_pybytes, to_pybytes}};
-use crate::exceptions::OoniErr;
+use crate::utils::{from_pybytes, to_pybytes};
 
 #[gen_stub_pyclass]
 #[pyclass]
@@ -34,7 +33,11 @@ impl ServerState {
        state when needed
     */
     #[staticmethod]
-    fn from_creds(py: Python<'_>, public_parameters: Py<PyBytes>, secret_key: Py<PyBytes>) -> PyResult<Self> {
+    fn from_creds(
+        py: Python<'_>,
+        public_parameters: Py<PyBytes>,
+        secret_key: Py<PyBytes>,
+    ) -> PyResult<Self> {
         let pp = from_pybytes(py, &public_parameters)?;
         let sk = from_pybytes(py, &secret_key)?;
 
@@ -151,7 +154,11 @@ impl UserState {
         to_pybytes(py, &req)
     }
 
-    pub fn handle_registration_response(&mut self, py: Python<'_>, resp: Py<PyBytes>) -> PyResult<()> {
+    pub fn handle_registration_response(
+        &mut self,
+        py: Python<'_>,
+        resp: Py<PyBytes>,
+    ) -> PyResult<()> {
         let response = from_pybytes::<open_registration::Reply>(py, &resp)?;
         let client_state = self
             .registration_client_state
@@ -196,7 +203,11 @@ impl UserState {
         }
     }
 
-    pub fn handle_submit_response(&mut self, py: Python<'_>, response: Py<PyBytes>) -> PyResult<()> {
+    pub fn handle_submit_response(
+        &mut self,
+        py: Python<'_>,
+        response: Py<PyBytes>,
+    ) -> PyResult<()> {
         let response = from_pybytes::<submit::Reply>(py, &response)?;
         let submit_state = self
             .submit_client_state

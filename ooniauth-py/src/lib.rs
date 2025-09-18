@@ -14,8 +14,14 @@ fn ooniauth_py(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<ServerState>()?;
     m.add_class::<UserState>()?;
     m.add_class::<SubmitRequest>()?;
-    m.add("AuthenticationFailed", m.py().get_type::<AuthenticationFailed>())?;
-    m.add("SerializationFailed", m.py().get_type::<SerializationFailed>())?;
+    m.add(
+        "AuthenticationFailed",
+        m.py().get_type::<ProtocolError>(),
+    )?;
+    m.add(
+        "SerializationFailed",
+        m.py().get_type::<DeserializationFailed>(),
+    )?;
     Ok(())
 }
 
