@@ -8,8 +8,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 1. Server initialization
     println!("1. Initializing server...");
-    let mut server = ServerState::new(&mut rng);
-    let public_params = server.public_parameters(); // Needs serialization
+    let server = ServerState::new(&mut rng);
+    let public_params = server.public_parameters();
     println!("   Key generation completed");
 
     // 2. User initialization
