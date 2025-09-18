@@ -7,7 +7,7 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 
-use crate::exceptions::{OoniErr, OoniResult};
+use crate::exceptions::OoniResult;
 use crate::utils::{from_pybytes, to_pybytes};
 
 #[gen_stub_pyclass]
@@ -165,7 +165,9 @@ impl UserState {
         let client_state = self
             .registration_client_state
             .take()
-            .expect("Trying to handle response without client state");
+            .expect("Calling `handle_registration_response` without a registration client state. \
+                    Did you forget to call `make_registration_request` before?"
+                );
 
         self.state
             .handle_response(client_state, response)?;
