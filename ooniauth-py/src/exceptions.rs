@@ -3,7 +3,9 @@ use ooniauth_core::errors as errors;
 use pyo3::exceptions::PyException;
 use pyo3_stub_gen::create_exception;
 use pyo3::PyErr;
+use thiserror::Error;
 
+// Python excepions: This is what the user sees from the python side when running into an error
 
 // Note that the module name must be the name of the pyproject module name to prevent errors,
 // we should create an issue in the pyo3_stub_gen repo about this. The thing is that
@@ -11,7 +13,6 @@ use pyo3::PyErr;
 // _ and -, it confuses itself and thinks that its a different module while writing in
 // the same resulting .pyi, deleting parts of the content
 
-// TODO Probably we need more exception classes for the protocol-related errors
 create_exception!{
     ooniauth-py,
     ProtocolError,
@@ -35,26 +36,22 @@ create_exception!{
 }
 
 
-#[derive(Debug)]
+// The following errors are useful to map rust errors to their corresponding python exceptions 
+// defined above
+
+#[derive(Debug, Error)]
 pub enum OoniErr {
+    #[error("Protocol Error: {reason}")]
     ProtocolError{reason: CMZError},
+    
+    #[error("Credential Error: {reason}")]
     CredentialError{reason: errors::CredentialError},
+
+    #[error("Deserialization Error: {reason}")]
     DeserializationFailed{reason: String}
 }
 
 pub type OoniResult<T> = Result<T, OoniErr>;
-
-impl std::error::Error for OoniErr {}
-
-impl std::fmt::Display for OoniErr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            OoniErr::ProtocolError{reason} => write!(f, "Protocol Error: {reason}"),
-            OoniErr::DeserializationFailed{reason} => write!(f, "Deserialization Error: {reason}"),
-            OoniErr::CredentialError { reason} => write!(f, "Credential Error: {reason}")
-        }
-    }
-}
 
 impl From<OoniErr> for PyErr {
     fn from(value: OoniErr) -> Self {

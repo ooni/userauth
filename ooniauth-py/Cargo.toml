@@ -16,3 +16,4 @@ pyo3-stub-gen = "0.13.1"
 rand = {workspace = true}
 bincode = {workspace = true}
 serde = {workspace = true}
+thiserror = {workspace = true}

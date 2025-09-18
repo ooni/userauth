@@ -813,6 +813,7 @@ dependencies = [
  "pyo3-stub-gen",
  "rand",
  "serde",
+ "thiserror 2.0.16",
 ]
 
 [[package]]
