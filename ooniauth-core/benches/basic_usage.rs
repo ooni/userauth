@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use ooniauth_core::{submit, ServerState, UserState};
+use ooniauth_core::{ServerState, UserState};
 use rand::{rngs::ThreadRng, thread_rng};
 use std::hint::black_box;
 
