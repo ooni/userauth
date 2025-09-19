@@ -26,3 +26,6 @@ hex = "0.4"
 [[example]]
 name = "basic_usage"
 test = true
+
+[profile.release]
+lto = "fat"

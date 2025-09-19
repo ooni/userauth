@@ -17,3 +17,6 @@ rand = {workspace = true}
 bincode = {workspace = true}
 serde = {workspace = true}
 thiserror = {workspace = true}
+
+[profile.release]
+lto = "fat"
