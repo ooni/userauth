@@ -1,17 +1,21 @@
 use std::hint::black_box;
 use criterion::{criterion_group, criterion_main, Criterion};
+use ooniauth_core::{ServerState, UserState};
+use rand::{rngs::ThreadRng, thread_rng};
 
-fn fibonacci(n: u64) -> u64 {
-    match n {
-        0 => 1,
-        1 => 1,
-        n => fibonacci(n-1) + fibonacci(n-2),
-    }
+fn setup() -> (ThreadRng, UserState, ServerState) {
+
 }
 
-fn criterion_benchmark(c: &mut Criterion) {
+fn bench_registration(c: &mut Criterion) {
+    let mut rng = thread_rng();
+    let server = ServerState::new(&mut rng);
+    let pp = server.public_parameters();
+    let user = UserState::new(pp);
+
+    let (registration_req , state)= user.request(&mut rng).unwrap();
     c.bench_function("fib 20", |b| b.iter(|| fibonacci(black_box(20))));
 }
 
-criterion_group!(benches, criterion_benchmark);
+criterion_group!(benches, bench_registration);
 criterion_main!(benches);
