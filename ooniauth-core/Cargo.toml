@@ -5,8 +5,7 @@ edition = "2021"
 
 
 [dependencies]
-cmz = { version = "0.1.0", path = "../include/cmz" }
-sigma_compiler = { version = "0.1.0", path = "../include/sigma_compiler" }
+cmz = "0.1.0-rc1"
 curve25519-dalek = { version = "4", features = ["digest", "group", "rand_core", "serde"] }
 ff = "0.13.1"
 group = "0.13.0"
