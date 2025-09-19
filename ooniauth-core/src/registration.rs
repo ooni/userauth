@@ -33,10 +33,10 @@ impl UserState {
     ) -> Result<(open_registration::Request, open_registration::ClientState), CMZError> {
         cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
 
-       let mut UAC = UserAuthCredential::using_pubkey(&self.pp);
-       // For registration, age and measurement_count will be set by the server
-       // But we need to provide some initial values for the protocol
-       UAC.measurement_count = Some(Scalar::ZERO);
+        let mut UAC = UserAuthCredential::using_pubkey(&self.pp);
+        // For registration, age and measurement_count will be set by the server
+        // But we need to provide some initial values for the protocol
+        UAC.measurement_count = Some(Scalar::ZERO);
         match open_registration::prepare(rng, SESSION_ID, UAC) {
             Ok(req_state) => Ok(req_state),
             Err(_) => Err(CMZError::CliProofFailed),

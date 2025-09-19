@@ -26,3 +26,10 @@ hex = "0.4"
 [[example]]
 name = "basic_usage"
 test = true
+
+[dev-dependencies]
+criterion = { version = "0.5"}
+
+[[bench]]
+name = "basic_usage"
+harness = false
