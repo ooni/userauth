@@ -1,13 +1,16 @@
 include:
 	mkdir -p include/
-	cd include && git clone git@github.com:ooni/cmz.git
-	cd include && git clone git@github.com:ooni/sigma_compiler.git
-	cd include && git clone https://github.com/mmaker/sigma-rs.git
+	cd include && git clone https://github.com/sigma-rs/cmz.git || echo "cmz already cloned"
+	cd include && git clone https://github.com/sigma-rs/sigma-compiler.git || echo "sigma-compiler already cloned"
+	cd include && git clone https://github.com/sigma-rs/sigma-proofs.git || echo "sigma-proofs already cloned"
 
 update:
 	cd include/cmz && git pull
-	cd include/sigma_compiler && git pull
-	cd include/sigma-rs && git pull
+	cd include/sigma-compiler && git pull
+	cd include/sigma-proofs && git pull
 	@echo "All sublibraries updated."
 
-.PHONY: include update
+clean:
+	rm -rf include/
+
+.PHONY: include update clean

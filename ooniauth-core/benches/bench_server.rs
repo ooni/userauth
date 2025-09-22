@@ -19,7 +19,7 @@ fn bench_registration(c: &mut Criterion) {
 
     // Create the request
     let (registration_req, _) = user.request(&mut rng).unwrap();
-    c.bench_function("registration", |b| {
+    c.bench_function("server.open_registration", |b| {
         b.iter(|| server.open_registration(black_box(registration_req.clone())))
     });
 }
@@ -27,28 +27,26 @@ fn bench_registration(c: &mut Criterion) {
 fn bench_submit(c: &mut Criterion) {
     let (mut rng, mut user, mut server) = setup();
 
-    // Create the request
-    let (registration_req, reg_state) = user.request(&mut rng).unwrap();
-    let resp = server.open_registration(registration_req).unwrap();
-    user.handle_response(reg_state, resp)
-        .expect("Should handle response properly");
-    let today = server.today();
-    let cc = "VE";
-    let asn = "AS1234";
+    c.bench_function("server.handle_submit", |b| {
+        let (registration_req, reg_state) = user.request(&mut rng).unwrap();
+        let resp = server.open_registration(registration_req).unwrap();
+        user.handle_response(reg_state, resp)
+            .expect("Should handle response properly");
+        let today = server.today();
+        let cc = "VE";
+        let asn = "AS1234";
 
-    let age_range = (today - 30)..(today + 1);
-    let msm_range = 0..100;
-    let ((req, _), nym) = user
-        .submit_request(
-            &mut rng,
-            cc.into(),
-            asn.into(),
-            age_range.clone(),
-            msm_range.clone(),
-        )
-        .unwrap();
-
-    c.bench_function("submit", |b| {
+        let age_range = (today - 30)..(today + 1);
+        let msm_range = 0..100;
+        let ((req, _), nym) = user
+            .submit_request(
+                &mut rng,
+                cc.into(),
+                asn.into(),
+                age_range.clone(),
+                msm_range.clone(),
+            )
+            .unwrap();
         b.iter(|| {
             server.handle_submit(
                 black_box(&mut rng),
