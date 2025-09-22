@@ -8,4 +8,7 @@ update:
 	cd include/sigma-compiler && git pull
 	@echo "All sublibraries updated."
 
-.PHONY: include update
+clean:
+	rm -rf include/
+
+.PHONY: include update clean
