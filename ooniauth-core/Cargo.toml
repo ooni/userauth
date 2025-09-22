@@ -3,10 +3,17 @@ name = "ooniauth-core"
 version = "0.1.0"
 edition = "2021"
 
+# [patch.crates-io]
+# cmz = { path = "../cmz" }
+# cmz-derive = { path = "include/cmz" }
+# cmz-core = { path = "include/cmz" }
+# sigma-compiler = { path = "include/sigma-compiler" }
+# sigma-compiler-derive = { path = "include/sigma-compiler" }
+# sigma-compiler-core = { path = "include/sigma-compiler" }
 
 [dependencies]
-cmz = { version = "0.1.0", path = "../include/cmz" }
-sigma_compiler = { version = "0.1.0", path = "../include/sigma_compiler" }
+cmz =  "0.1.0-rc1"
+sigma-compiler = "0.1.0-rc1"
 curve25519-dalek = { version = "4", features = ["digest", "group", "rand_core", "serde"] }
 ff = "0.13.1"
 group = "0.13.0"
@@ -31,5 +38,5 @@ test = true
 criterion = { version = "0.5"}
 
 [[bench]]
-name = "basic_usage"
+name = "bench_server"
 harness = false
