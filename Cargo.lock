@@ -259,8 +259,6 @@ checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
 [[package]]
 name = "cmz"
 version = "0.1.0-rc1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70d4c7ab4f6c3c086a5a5d3eb9e34d7abc076ff3ffe4b2144dd858adf8373274"
 dependencies = [
  "cmz-derive",
  "ff",
@@ -890,7 +888,6 @@ dependencies = [
  "serde_bytes",
  "serde_with",
  "sha2",
- "sigma-compiler",
  "subtle",
  "syn 2.0.106",
  "thiserror 2.0.16",
@@ -1267,8 +1264,6 @@ dependencies = [
 [[package]]
 name = "sigma-compiler-core"
 version = "0.1.0-rc1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4ea72a5142e1f78fdc1be3cef3e5124d01266eb223317008f5af7fe86ab3b70"
 dependencies = [
  "clap",
  "prettyplease",
