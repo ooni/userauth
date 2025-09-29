@@ -7,3 +7,4 @@ resolver = "2"
 [patch.crates-io]
 cmz = { path = "include/cmz" }
 sigma-compiler-core = { path = "include/sigma-compiler/sigma-compiler-core" }
+sigma-proofs = { path = "include/sigma-proofs" }

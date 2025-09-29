@@ -2,8 +2,22 @@ use std::time::Instant;
 
 use hex;
 use ooniauth_core::{scalar_u32, ServerState, UserState};
+use tracing_forest::ForestLayer;
+use tracing_forest::util::LevelFilter;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::{EnvFilter, Registry};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize tracing with forest layer for runtime display
+    let env_filter = EnvFilter::builder()
+        .with_default_directive(LevelFilter::INFO.into())
+        .from_env_lossy();
+
+    Registry::default()
+        .with(env_filter)
+        .with(ForestLayer::default())
+        .init();
     let mut rng = rand::thread_rng();
 
     println!("=== Anonymous Credential Example ===\n");

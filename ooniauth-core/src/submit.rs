@@ -8,6 +8,7 @@ use curve25519_dalek::RistrettoPoint;
 use group::{Group, GroupEncoding};
 use rand::{CryptoRng, RngCore};
 use sha2::Sha512;
+use tracing::{instrument, trace, debug};
 
 const SESSION_ID: &[u8] = b"submit";
 
@@ -24,6 +25,7 @@ muCMZProtocol!(submit<min_age_today, max_age, min_measurement_count,
 );
 
 impl UserState {
+    #[instrument(skip(self, rng))]
     pub fn submit_request(
         &self,
         rng: &mut (impl RngCore + CryptoRng),
@@ -32,6 +34,8 @@ impl UserState {
         age_range: std::ops::Range<u32>,
         measurement_count_range: std::ops::Range<u32>,
     ) -> Result<((submit::Request, submit::ClientState), [u8; 32]), CredentialError> {
+        trace!("Starting submit request");
+        debug!("Age range: {:?}, Measurement count range: {:?}", age_range, measurement_count_range);
         cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
 
         // Get the current credential
@@ -45,8 +49,10 @@ impl UserState {
 
         // Domain-specific generator and NYM computation
         let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
+        trace!("Computing DOMAIN for: {}", domain_str);
         let DOMAIN = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
         let NYM = Old.nym_id.unwrap() * DOMAIN;
+        debug!("NYM computed successfully");
 
         // Ensure the credential timestamp is within the allowed range
         let age: u32 = match scalar_u32(&Old.age.unwrap()) {
@@ -115,9 +121,16 @@ impl UserState {
             NYM,
         };
 
+        trace!("Preparing submit proof with params");
         match submit::prepare(rng, SESSION_ID, &Old, New, &params) {
-            Ok(req_state) => Ok((req_state, NYM.compress().to_bytes())),
-            Err(_) => Err(CredentialError::CMZError(CMZError::CliProofFailed)),
+            Ok(req_state) => {
+                debug!("Submit request prepared successfully");
+                Ok((req_state, NYM.compress().to_bytes()))
+            }
+            Err(_) => {
+                debug!("Failed to prepare submit request");
+                Err(CredentialError::CMZError(CMZError::CliProofFailed))
+            }
         }
     }
 
@@ -139,6 +152,7 @@ impl UserState {
 }
 
 impl ServerState {
+    #[instrument(skip(self, rng, req))]
     pub fn handle_submit(
         &mut self,
         rng: &mut (impl RngCore + CryptoRng),
@@ -149,6 +163,8 @@ impl ServerState {
         age_range: std::ops::Range<u32>,
         measurement_count_range: std::ops::Range<u32>,
     ) -> Result<submit::Reply, CMZError> {
+        trace!("Server handling submit request");
+        debug!("Age range: {:?}, Measurement count range: {:?}", age_range, measurement_count_range);
         let reqbytes = req.as_bytes();
 
         let recvreq = submit::Request::try_from(&reqbytes[..]).unwrap();
@@ -189,8 +205,14 @@ impl ServerState {
                 Ok(())
             },
         ) {
-            Ok((response, (_old_cred, _new_cred))) => Ok(response),
-            Err(e) => Err(e),
+            Ok((response, (_old_cred, _new_cred))) => {
+                debug!("Submit request verified successfully");
+                Ok(response)
+            }
+            Err(e) => {
+                debug!("Submit request verification failed: {:?}", e);
+                Err(e)
+            }
         }
     }
 }

@@ -20,9 +20,12 @@ subtle = "2.6.1"
 thiserror = "2.0.12"
 syn = "2.0.103"
 hex = "0.4"
+tracing = "0.1"
 
 [dev-dependencies]
 criterion = { version = "0.5"}
+tracing-subscriber = { version = "0.3", features = ["env-filter", "registry"] }
+tracing-forest = "0.1"
 
 [[example]]
 name = "basic_usage"
@@ -32,3 +35,4 @@ test = true
 [[bench]]
 name = "bench_server"
 harness = false
+
