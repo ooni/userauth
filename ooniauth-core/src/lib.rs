@@ -18,13 +18,16 @@ pub mod submit;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ServerState {
     /// The private key for the main User Auth credential
-    sk: CMZPrivkey<G>,
-    pp: CMZPubkey<G>,
+    sk: SecretKey,
+    pp: PublicParameters,
 }
+
+pub type PublicParameters = CMZPubkey<G>;
+pub type SecretKey = CMZPrivkey<G>;
 
 pub struct UserState {
     /// The public parameters for the client
-    pub pp: CMZPubkey<G>,
+    pub pp: PublicParameters,
     pub(crate) credential: Option<UserAuthCredential>,
 }
 
@@ -38,13 +41,25 @@ impl ServerState {
         Self { sk, pp }
     }
 
+    pub fn secret_key_ref(&self) -> &SecretKey {
+        &self.sk
+    }
+
+    pub fn public_parameters_ref(&self) -> &PublicParameters {
+        &self.pp
+    }
+
+    pub fn from_creds(sk : SecretKey, pp : PublicParameters) -> Self {
+        Self {sk, pp}
+    }
+
     /// Get the public parameters for credential operations
-    pub fn public_parameters(&self) -> CMZPubkey<G> {
+    pub fn public_parameters(&self) -> PublicParameters {
         self.pp.clone()
     }
 
     /// Get today's (real or simulated) date as u32
-    pub fn today(&self) -> u32 {
+    pub fn today() -> u32 {
         // We will not encounter negative Julian dates (~6700 years ago)
         // or ones larger than 32 bits
         (time::OffsetDateTime::now_utc().date())

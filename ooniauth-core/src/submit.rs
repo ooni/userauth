@@ -140,7 +140,7 @@ impl UserState {
 
 impl ServerState {
     pub fn handle_submit(
-        &mut self,
+        &self,
         rng: &mut (impl RngCore + CryptoRng),
         req: submit::Request,
         nym: &[u8; 32],
@@ -259,7 +259,7 @@ mod tests {
         // Test submit request with valid parameters
         let probe_cc = "US".to_string();
         let probe_asn = "AS1234".to_string();
-        let today = server_state.today();
+        let today = ServerState::today();
         let age_range = (today - 30)..(today + 1); // Credential valid for 30 days
         let measurement_count_range = 0..100;
 

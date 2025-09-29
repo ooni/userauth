@@ -8,16 +8,16 @@ cmz = "0.1.0-rc1"
 curve25519-dalek = { version = "4", features = ["digest", "group", "rand_core", "serde"] }
 ff = "0.13.1"
 group = "0.13.0"
-rand = "0.8.5"
-serde = "1.0.219"
+rand = {workspace = true}
+serde = {workspace = true}
 serde_with = "3.12.0"
-bincode = "1"
+bincode = {workspace = true}
 serde_bytes = "0.11.17"
 sha2 = "0.10.9"
 chrono = "0.4.41"
 time = "0.3.41"
 subtle = "2.6.1"
-thiserror = "2.0.12"
+thiserror = {workspace = true}
 syn = "2.0.103"
 hex = "0.4"
 
@@ -27,7 +27,6 @@ criterion = { version = "0.5"}
 [[example]]
 name = "basic_usage"
 test = true
-
 
 [[bench]]
 name = "bench_server"

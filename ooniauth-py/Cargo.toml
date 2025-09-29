@@ -1,0 +1,19 @@
+[package]
+name = "ooniauth_py"
+version = "0.1.0"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "ooniauth_py"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cmz = { workspace = true }
+ooniauth-core = {path = "../ooniauth-core"}
+pyo3 = "0.26.0"
+pyo3-stub-gen = "0.13.1"
+rand = {workspace = true}
+bincode = {workspace = true}
+serde = {workspace = true}
+thiserror = {workspace = true}

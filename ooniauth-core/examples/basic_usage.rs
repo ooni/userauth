@@ -11,7 +11,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. Server initialization
     let now = Instant::now();
     println!("1. Initializing server...");
-    let mut server = ServerState::new(&mut rng);
+    let server = ServerState::new(&mut rng);
     let public_params = server.public_parameters();
     println!("   Key generation completed in {} ms", now.elapsed().as_millis());
 
@@ -69,7 +69,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let probe_asn = "AS1234".to_string();
 
     // Set valid age range (credential valid for 30 days)
-    let today = server.today();
+    let today = ServerState::today();
     let age_range = (today - 30)..(today + 1);
     let measurement_count_range = 0..100;
 
