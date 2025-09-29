@@ -8,6 +8,3 @@ bincode = "1"
 cmz = { version = "0.1.0", path = "./include/cmz" }
 serde = "1.0.219"
 thiserror = "2.0.12"
-
-[profile.release]
-lto = "fat"
