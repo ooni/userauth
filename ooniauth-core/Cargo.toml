@@ -3,14 +3,12 @@ name = "ooniauth-core"
 version = "0.1.0"
 edition = "2021"
 
-
 [dependencies]
-cmz = { workspace = true }
-sigma_compiler = { version = "0.1.0", path = "../include/sigma_compiler" }
+cmz = "0.1.0-rc1"
 curve25519-dalek = { version = "4", features = ["digest", "group", "rand_core", "serde"] }
 ff = "0.13.1"
 group = "0.13.0"
-rand = {workspace = true} 
+rand = {workspace = true}
 serde = {workspace = true}
 serde_with = "3.12.0"
 bincode = {workspace = true}
@@ -23,6 +21,13 @@ thiserror = {workspace = true}
 syn = "2.0.103"
 hex = "0.4"
 
+[dev-dependencies]
+criterion = { version = "0.5"}
+
 [[example]]
 name = "basic_usage"
 test = true
+
+[[bench]]
+name = "bench_server"
+harness = false
