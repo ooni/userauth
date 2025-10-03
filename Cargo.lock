@@ -993,6 +993,7 @@ dependencies = [
 name = "ooniauth_py"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "bincode",
  "cmz",
  "ooniauth-core",

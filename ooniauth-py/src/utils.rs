@@ -1,22 +1,29 @@
-use pyo3::{prelude::*, types::PyBytes};
+use std::fmt::Display;
 
+use pyo3::{prelude::*, types::PyString};
 use crate::{OoniResult, exceptions::OoniErr};
+use base64::prelude::*;
 
-pub fn to_pybytes<T: serde::Serialize>(py: Python<'_>, value: &T) -> Py<PyBytes> {
+pub fn to_pystring<T: serde::Serialize>(py: Python<'_>, value: &T) -> Py<PyString> {
     // We consider a bad serialization as a programming error since most of the times
     // we want to serialize a structure made by us that should be well-formed
     let bytes =
         bincode::serialize(&value).unwrap_or_else(|e| panic!("Could not serialize value: {e}"));
-    PyBytes::new(py, &bytes).into()
+    PyString::new(py, &BASE64_STANDARD.encode(bytes)).into()
 }
 
-pub fn from_pybytes<'a, T: serde::Deserialize<'a>>(
+pub fn from_pystring<T: serde::de::DeserializeOwned>(
     py: Python<'_>,
-    bytes: &'a Py<PyBytes>,
+    py_string: &Py<PyString>,
 ) -> OoniResult<T> {
     // We consider bad deserialization an user error, since most of the time
     // what we are deserializing comes from the user in python world
-    bincode::deserialize::<T>(bytes.as_bytes(py)).map_err(|e| OoniErr::DeserializationFailed {
-        reason: e.to_string(),
-    })
+    let s = to_dser_fail(py_string.to_str(py))?;
+    let bytes = to_dser_fail(BASE64_STANDARD.decode(s))?;
+    let result = bincode::deserialize::<T>(bytes.as_ref());
+    to_dser_fail(result)
+}
+
+fn to_dser_fail<T,E : Display>(x : Result<T,E>) -> Result<T,OoniErr>{
+    x.map_err(|e| OoniErr::DeserializationFailed { reason: e.to_string() })
 }
