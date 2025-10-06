@@ -246,7 +246,7 @@ pub struct SubmitRequest {
 mod tests {
     use base64::{prelude::BASE64_STANDARD, Engine};
     use ooniauth_core::{registration::open_registration::Request, ServerState, UserState};
-    use pyo3::Python;
+    use pyo3::{types::{PyList, PyString}, Python};
     use rand::{rngs::ThreadRng, thread_rng};
 
     
@@ -263,7 +263,7 @@ mod tests {
     }
 
     #[test]
-    fn test_basic_registration() {
+    fn test_basic_usage() {
         pyo3::Python::initialize();
         Python::attach(|py| {
             // Test "serializing" the server to python
@@ -273,9 +273,21 @@ mod tests {
 
             let server = crate::ServerState::from_creds(py, pub_key, secret_key).unwrap();
             
+            // Test registration
             let mut client = crate::UserState::new(py, server.get_public_parameters(py)).unwrap();
             let req = client.make_registration_request(py).unwrap();
-            assert!(server.handle_registration_request(py, req).is_ok());
+            let reg_response = server.handle_registration_request(py, req).unwrap();
+            assert!(client.handle_registration_response(py, reg_response).is_ok());
+
+            // Test submit
+            let cc = PyString::new(py, "VE");
+            let asn = PyString::new(py, "AS1234");
+            let today = ServerState::today();
+            let submit_req = client.make_submit_request(py, cc.clone().into(), asn.clone().into(), today).unwrap();
+
+            let age_range = PyList::new(py, vec![today - 30, today + 1]).unwrap();
+            let msm_range = PyList::new(py, vec![0, 100]).unwrap();
+            assert!(server.handle_submit_request(py, submit_req.nym, submit_req.request, cc.into(), asn.into(), age_range.into(), msm_range.into()).is_ok());
         });
     }
 
