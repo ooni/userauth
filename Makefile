@@ -1,7 +1,6 @@
 include:
 	mkdir -p include/
 	cd include && git clone git@github.com:sigma-rs/cmz.git
-	cd include && git clone git@github.com:sigma-rs/sigma-proofs.git
 	cd include && git clone git@github.com:sigma-rs/sigma-compiler.git
 
 update:
