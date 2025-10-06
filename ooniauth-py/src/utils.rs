@@ -18,13 +18,13 @@ pub fn from_pystring<T: serde::de::DeserializeOwned>(
 ) -> OoniResult<T> {
     // We consider bad deserialization an user error, since most of the time
     // what we are deserializing comes from the user in python world
-    let s = to_dser_fail(py_string.to_str(py))?;
-    let bytes = to_dser_fail(BASE64_STANDARD.decode(s))?;
+    let s = to_dser_err(py_string.to_str(py))?;
+    let bytes = to_dser_err(BASE64_STANDARD.decode(s))?;
     let result = bincode::deserialize::<T>(bytes.as_ref());
-    to_dser_fail(result)
+    to_dser_err(result)
 }
 
-fn to_dser_fail<T, E: Display>(x: Result<T, E>) -> Result<T, OoniErr> {
+fn to_dser_err<T, E: Display>(x: Result<T, E>) -> Result<T, OoniErr> {
     x.map_err(|e| OoniErr::DeserializationFailed {
         reason: e.to_string(),
     })
