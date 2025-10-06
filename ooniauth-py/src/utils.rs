@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
-use pyo3::{prelude::*, types::PyString};
 use crate::{OoniResult, exceptions::OoniErr};
 use base64::prelude::*;
+use pyo3::{prelude::*, types::PyString};
 
 pub fn to_pystring<T: serde::Serialize>(py: Python<'_>, value: &T) -> Py<PyString> {
     // We consider a bad serialization as a programming error since most of the times
@@ -24,6 +24,8 @@ pub fn from_pystring<T: serde::de::DeserializeOwned>(
     to_dser_fail(result)
 }
 
-fn to_dser_fail<T,E : Display>(x : Result<T,E>) -> Result<T,OoniErr>{
-    x.map_err(|e| OoniErr::DeserializationFailed { reason: e.to_string() })
+fn to_dser_fail<T, E: Display>(x: Result<T, E>) -> Result<T, OoniErr> {
+    x.map_err(|e| OoniErr::DeserializationFailed {
+        reason: e.to_string(),
+    })
 }

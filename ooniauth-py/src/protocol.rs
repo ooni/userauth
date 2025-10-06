@@ -8,8 +8,8 @@ use pyo3::{
 };
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 
-use crate::{exceptions::OoniResult, OoniErr};
 use crate::utils::{from_pystring, to_pystring};
+use crate::{OoniErr, exceptions::OoniResult};
 
 #[gen_stub_pyclass]
 #[pyclass]
@@ -80,15 +80,16 @@ impl ServerState {
         age_range: Py<PyList>,
         measurement_count_range: Py<PyList>,
     ) -> OoniResult<Py<PyString>> {
-
         // Convert arguments from py types to rust types
-        let nym = nym
-            .to_str(py)
-            .map_err(|e| OoniErr::DeserializationFailed { reason: e.to_string() })?;
+        let nym = nym.to_str(py).map_err(|e| OoniErr::DeserializationFailed {
+            reason: e.to_string(),
+        })?;
 
         let nym = BASE64_STANDARD
             .decode(nym)
-            .map_err(|e| OoniErr::DeserializationFailed { reason: e.to_string() })?;
+            .map_err(|e| OoniErr::DeserializationFailed {
+                reason: e.to_string(),
+            })?;
 
         let mut nym_32: [u8; 32] = [0; 32];
         nym_32.copy_from_slice(nym.as_ref());
@@ -244,17 +245,19 @@ pub struct SubmitRequest {
 
 #[cfg(test)]
 mod tests {
-    use base64::{prelude::BASE64_STANDARD, Engine};
-    use ooniauth_core::{registration::open_registration::Request, ServerState, UserState};
-    use pyo3::{types::{PyList, PyString}, Python};
+    use base64::{Engine, prelude::BASE64_STANDARD};
+    use ooniauth_core::{ServerState, UserState, registration::open_registration::Request};
+    use pyo3::{
+        Python,
+        types::{PyList, PyString},
+    };
     use rand::{rngs::ThreadRng, thread_rng};
 
-    
     #[test]
     fn test_encoding_verifies() {
         // Check that the string encoding still let us verify
         let (mut rng, client, server) = setup();
-        let (req, _state ) = client.request(&mut rng).unwrap();
+        let (req, _state) = client.request(&mut rng).unwrap();
         let req_bin = req.as_bytes();
         let req_str = BASE64_STANDARD.encode(req_bin);
         let req_bin = BASE64_STANDARD.decode(req_str).unwrap();
@@ -269,25 +272,44 @@ mod tests {
             // Test "serializing" the server to python
             let server = crate::ServerState::new();
 
-            let (pub_key, secret_key) = (server.get_public_parameters(py), server.get_secret_key(py));
+            let (pub_key, secret_key) =
+                (server.get_public_parameters(py), server.get_secret_key(py));
 
             let server = crate::ServerState::from_creds(py, pub_key, secret_key).unwrap();
-            
+
             // Test registration
             let mut client = crate::UserState::new(py, server.get_public_parameters(py)).unwrap();
             let req = client.make_registration_request(py).unwrap();
             let reg_response = server.handle_registration_request(py, req).unwrap();
-            assert!(client.handle_registration_response(py, reg_response).is_ok());
+            assert!(
+                client
+                    .handle_registration_response(py, reg_response)
+                    .is_ok()
+            );
 
             // Test submit
             let cc = PyString::new(py, "VE");
             let asn = PyString::new(py, "AS1234");
             let today = ServerState::today();
-            let submit_req = client.make_submit_request(py, cc.clone().into(), asn.clone().into(), today).unwrap();
+            let submit_req = client
+                .make_submit_request(py, cc.clone().into(), asn.clone().into(), today)
+                .unwrap();
 
             let age_range = PyList::new(py, vec![today - 30, today + 1]).unwrap();
             let msm_range = PyList::new(py, vec![0, 100]).unwrap();
-            assert!(server.handle_submit_request(py, submit_req.nym, submit_req.request, cc.into(), asn.into(), age_range.into(), msm_range.into()).is_ok());
+            assert!(
+                server
+                    .handle_submit_request(
+                        py,
+                        submit_req.nym,
+                        submit_req.request,
+                        cc.into(),
+                        asn.into(),
+                        age_range.into(),
+                        msm_range.into()
+                    )
+                    .is_ok()
+            );
         });
     }
 
