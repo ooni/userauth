@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cmz = "0.1.0-rc1"
+cmz = {workspace = true}
 curve25519-dalek = { version = "4", features = ["digest", "group", "rand_core", "serde"] }
 ff = "0.13.1"
 group = "0.13.0"
