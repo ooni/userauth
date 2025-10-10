@@ -264,7 +264,7 @@ checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
 
 [[package]]
 name = "cmz"
-version = "0.1.0-rc1"
+version = "0.1.0-rc2"
 dependencies = [
  "cmz-derive",
  "ff",
@@ -1504,8 +1504,6 @@ dependencies = [
 [[package]]
 name = "sigma-compiler-core"
 version = "0.1.0-rc2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc19242949b28e1efafe2bbd5f55c9db8b9cd7aaadbb797868aa7864bd405a97"
 dependencies = [
  "clap",
  "prettyplease",
@@ -2096,7 +2094,3 @@ name = "zeroize"
 version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ced3678a2879b30306d323f4542626697a464a97c0a07c9aebf7ebca65cd4dde"
-
-[[patch.unused]]
-name = "sigma-compiler-core"
-version = "0.1.0-rc1"
