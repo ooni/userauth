@@ -26,7 +26,6 @@ muCMZProtocol! {open_registration,
     UAC: UserAuthCredential { nym_id: J, age: S, measurement_count: I},
 }
 
-
 impl UserState {
     pub fn request(
         &self,
