@@ -232,7 +232,7 @@ mod tests {
         let rng = &mut rand::thread_rng();
 
         // Setup server and user
-        let mut server_state = ServerState::new(rng);
+        let server_state = ServerState::new(rng);
         let mut user_state = UserState::new(server_state.public_parameters());
 
         // First do registration to get a credential

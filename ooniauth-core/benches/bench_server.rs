@@ -15,7 +15,7 @@ fn setup() -> (ThreadRng, UserState, ServerState) {
 // For now we will only care about server functions, specially handling submit and
 // registration, since those are the most important bottleneck for our backend
 fn bench_registration(c: &mut Criterion) {
-    let (mut rng, user, mut server) = setup();
+    let (mut rng, user, server) = setup();
 
     // Create the request
     let (registration_req, _) = user.request(&mut rng).unwrap();
@@ -25,14 +25,14 @@ fn bench_registration(c: &mut Criterion) {
 }
 
 fn bench_submit(c: &mut Criterion) {
-    let (mut rng, mut user, mut server) = setup();
+    let (mut rng, mut user, server) = setup();
 
     c.bench_function("server.handle_submit", |b| {
         let (registration_req, reg_state) = user.request(&mut rng).unwrap();
         let resp = server.open_registration(registration_req).unwrap();
         user.handle_response(reg_state, resp)
             .expect("Should handle response properly");
-        let today = server.today();
+        let today = ServerState::today();
         let cc = "VE";
         let asn = "AS1234";
 
@@ -52,8 +52,8 @@ fn bench_submit(c: &mut Criterion) {
                 black_box(&mut rng),
                 black_box(req.clone()),
                 black_box(&nym),
-                black_box(cc.into()),
-                black_box(asn.into()),
+                black_box(cc),
+                black_box(asn),
                 black_box(age_range.clone()),
                 black_box(msm_range.clone()),
             )
