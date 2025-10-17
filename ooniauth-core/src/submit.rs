@@ -170,14 +170,15 @@ impl ServerState {
         };
 
         let server_sk = self.sk.clone();
+        let server_pp = self.pp.clone();
         match submit::handle(
             rng,
             SESSION_ID,
             recvreq,
             move |Old: &mut UserAuthCredential, New: &mut UserAuthCredential| {
                 // Set the private key for the credentials - this is essential for the protocol
-                Old.set_privkey(&server_sk);
-                New.set_privkey(&server_sk);
+                Old.set_keypair(server_sk.clone(), server_pp.clone());
+                New.set_keypair(server_sk.clone(), server_pp.clone());
 
                 // The protocol should populate Old and New from the client's proof
                 // We don't set the values here - they come from the client's proof
