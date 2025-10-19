@@ -21,6 +21,19 @@ CMZ! { UserAuthCredential:
     measurement_count
 }
 
+impl UserAuthCredential {
+    /// Set the public key and private key for this credential. Assumes the keypair is well-formed.
+    pub(crate) fn set_keypair(
+        &mut self,
+        privkey: CMZPrivkey<G>,
+        pubkey: CMZPubkey<G>,
+    ) -> &mut Self {
+        self.privkey = privkey;
+        self.pubkey = pubkey;
+        self
+    }
+}
+
 muCMZProtocol! {open_registration,
     ,
     UAC: UserAuthCredential { nym_id: J, age: S, measurement_count: I},
@@ -76,7 +89,7 @@ impl ServerState {
             SESSION_ID,
             recvreq,
             |UAC: &mut UserAuthCredential| {
-                UAC.set_privkey(&self.sk);
+                UAC.set_keypair(self.sk.clone(), self.pp.clone());
                 UAC.measurement_count = Some(Scalar::ZERO);
                 UAC.age = Some(ServerState::today().into());
                 Ok(())

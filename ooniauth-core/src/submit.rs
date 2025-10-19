@@ -170,14 +170,15 @@ impl ServerState {
         };
 
         let server_sk = self.sk.clone();
+        let server_pp = self.pp.clone();
         match submit::handle(
             rng,
             SESSION_ID,
             recvreq,
             move |Old: &mut UserAuthCredential, New: &mut UserAuthCredential| {
                 // Set the private key for the credentials - this is essential for the protocol
-                Old.set_privkey(&server_sk);
-                New.set_privkey(&server_sk);
+                Old.set_keypair(server_sk.clone(), server_pp.clone());
+                New.set_keypair(server_sk.clone(), server_pp.clone());
 
                 // The protocol should populate Old and New from the client's proof
                 // We don't set the values here - they come from the client's proof
@@ -231,7 +232,7 @@ mod tests {
         let rng = &mut rand::thread_rng();
 
         // Setup server and user
-        let mut server_state = ServerState::new(rng);
+        let server_state = ServerState::new(rng);
         let mut user_state = UserState::new(server_state.public_parameters());
 
         // First do registration to get a credential
