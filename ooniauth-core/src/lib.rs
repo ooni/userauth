@@ -49,8 +49,8 @@ impl ServerState {
         &self.pp
     }
 
-    pub fn from_creds(sk : SecretKey, pp : PublicParameters) -> Self {
-        Self {sk, pp}
+    pub fn from_creds(sk: SecretKey, pp: PublicParameters) -> Self {
+        Self { sk, pp }
     }
 
     /// Get the public parameters for credential operations

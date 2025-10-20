@@ -13,7 +13,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Initializing server...");
     let server = ServerState::new(&mut rng);
     let public_params = server.public_parameters();
-    println!("   Key generation completed in {} ms", now.elapsed().as_millis());
+    println!(
+        "   Key generation completed in {} ms",
+        now.elapsed().as_millis()
+    );
 
     // 2. User initialization
     let now = Instant::now();
@@ -25,7 +28,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let now = Instant::now();
     println!("\n3. User registration...");
     let (reg_request, reg_state) = user.request(&mut rng)?;
-    println!("   Registration request created in {} ms", now.elapsed().as_millis());
+    println!(
+        "   Registration request created in {} ms",
+        now.elapsed().as_millis()
+    );
 
     // Convert request to bytes for transmission
     let request_bytes = reg_request.as_bytes();
@@ -35,7 +41,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Server processes registration
     let now = Instant::now();
     let reg_response = server.open_registration(reg_request)?;
-    println!("   Server processed registration in {} ms", now.elapsed().as_millis());
+    println!(
+        "   Server processed registration in {} ms",
+        now.elapsed().as_millis()
+    );
 
     // Convert response to bytes for transmission
     let response_bytes = reg_response.as_bytes();
@@ -44,7 +53,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // User receives credential
     let now = Instant::now();
     user.handle_response(reg_state, reg_response)?;
-    println!("   User handled response in {} ms", now.elapsed().as_millis());
+    println!(
+        "   User handled response in {} ms",
+        now.elapsed().as_millis()
+    );
 
     // Print initial credential attributes
     println!("\n   === Initial Credential Attributes ===");
@@ -82,7 +94,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         measurement_count_range.clone(),
     )?;
 
-    println!("   Submit request created for {}/{} in {} ms", probe_cc, probe_asn, now.elapsed().as_millis());
+    println!(
+        "   Submit request created for {}/{} in {} ms",
+        probe_cc,
+        probe_asn,
+        now.elapsed().as_millis()
+    );
     println!("   Domain-specific pseudonym computed");
 
     // Show the NYM as hex
@@ -103,7 +120,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         age_range,
         measurement_count_range,
     )?;
-    println!("   Server validated submission and issued updated credential in {} ms", now.elapsed().as_millis());
+    println!(
+        "   Server validated submission and issued updated credential in {} ms",
+        now.elapsed().as_millis()
+    );
 
     // Convert response to bytes
     let submit_response_bytes = submit_response.as_bytes();
@@ -113,7 +133,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let now = Instant::now();
     user.handle_submit_response(submit_state, submit_response)?;
-    println!("  User handled submit response in {} ms", now.elapsed().as_millis());
+    println!(
+        "  User handled submit response in {} ms",
+        now.elapsed().as_millis()
+    );
 
     // Print updated credential attributes
     println!("\n   === Updated Credential Attributes ===");
@@ -149,7 +172,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         measurement_count_range2.clone(),
     )?;
 
-    println!("   Submit request created for {}/{} in {} ms", probe_cc2, probe_asn2, now.elapsed().as_millis());
+    println!(
+        "   Submit request created for {}/{} in {} ms",
+        probe_cc2,
+        probe_asn2,
+        now.elapsed().as_millis()
+    );
     println!("   Different domain produces different pseudonym");
 
     // Show the second NYM as hex
@@ -165,12 +193,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         age_range2,
         measurement_count_range2,
     )?;
-    println!("   Second submit request handled by server in {} ms", now.elapsed().as_millis());
-
+    println!(
+        "   Second submit request handled by server in {} ms",
+        now.elapsed().as_millis()
+    );
 
     let now = Instant::now();
     user.handle_submit_response(submit_state2, submit_response2)?;
-    println!("   Second submit response handled by user in {} ms", now.elapsed().as_millis());
+    println!(
+        "   Second submit response handled by user in {} ms",
+        now.elapsed().as_millis()
+    );
 
     // Print final credential attributes
     println!("\n   === Final Credential Attributes ===");
