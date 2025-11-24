@@ -146,7 +146,7 @@ mod tests {
         let rng = &mut rand::thread_rng();
 
         // Setup server and user
-        let mut server_state = ServerState::new(rng);
+        let server_state = ServerState::new(rng);
         let pp = server_state.public_parameters();
 
         // First do registration to get a credential
@@ -178,7 +178,7 @@ mod tests {
         let result = submit_request(
             &credentials,
             &pp,
-            rng, 
+            rng,
             probe_cc.clone(),
             probe_asn.clone(),
             age_range.clone(),

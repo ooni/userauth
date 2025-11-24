@@ -265,8 +265,7 @@ checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
 [[package]]
 name = "cmz"
 version = "0.1.0-rc2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76c51664e2ba8fb911d04e31a38e0e15bfef6dca7840e737baad55e83bcbd0db"
+source = "git+https://github.com/sigma-rs/cmz#de6781d47f94dd58934bebf1a8a30b0b05e85e16"
 dependencies = [
  "cmz-derive",
  "ff",
