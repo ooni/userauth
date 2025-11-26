@@ -15,5 +15,5 @@ You can build the library using
 make all
 ```
 
-This will create the wheels file in `userauth/target/wheels`
+This will create the wheels file in `userauth/target/wheels`. You can use this wheels file as any other python dependency!
 
