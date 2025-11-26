@@ -1,6 +1,6 @@
 # Python Bindings
 
-This crate implements the Python bindings for the [core](..) library.
+This crate implements the Python bindings for the [core](https://github.com/ooni/userauth) library.
 
 ## Dependencies
 
