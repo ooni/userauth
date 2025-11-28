@@ -1,5 +1,5 @@
 use base64::prelude::*;
-use ooniauth_core as ooni;
+use ooniauth_core::{self as ooni, PublicParameters, SecretKey};
 use ooniauth_core::registration::open_registration;
 use ooniauth_core::submit::submit;
 use ooniauth_core::update::*;
@@ -122,6 +122,17 @@ impl ServerState {
         )?;
 
         Ok(to_pystring(py, &result))
+    }
+
+    fn handle_update_request(&self, py: Python<'_>, req : Py<PyString>, old_public_params: Py<PyString>, old_secret_key: Py<PyString>) -> OoniResult<Py<PyString>>{
+        let req = from_pystring::<update::Request>(py, &req)?;
+        let old_sk = from_pystring::<SecretKey>(py, &old_secret_key)?;
+        let old_pp = from_pystring::<PublicParameters>(py, &old_public_params)?;
+
+        let mut rng = rand::thread_rng();
+        let resp = self.state.handle_update(&mut rng, req, &old_sk, &old_pp)?;
+
+        return Ok(to_pystring(py, &resp))
     }
 }
 
