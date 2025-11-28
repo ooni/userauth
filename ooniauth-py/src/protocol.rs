@@ -1,9 +1,8 @@
 use base64::prelude::*;
-use ooniauth_core::{self as ooni, PublicParameters, SecretKey};
 use ooniauth_core::registration::open_registration;
 use ooniauth_core::submit::submit;
 use ooniauth_core::update::*;
-
+use ooniauth_core::{self as ooni, PublicParameters, SecretKey};
 
 use pyo3::{
     prelude::*,
@@ -124,7 +123,13 @@ impl ServerState {
         Ok(to_pystring(py, &result))
     }
 
-    fn handle_update_request(&self, py: Python<'_>, req : Py<PyString>, old_public_params: Py<PyString>, old_secret_key: Py<PyString>) -> OoniResult<Py<PyString>>{
+    fn handle_update_request(
+        &self,
+        py: Python<'_>,
+        req: Py<PyString>,
+        old_public_params: Py<PyString>,
+        old_secret_key: Py<PyString>,
+    ) -> OoniResult<Py<PyString>> {
         let req = from_pystring::<update::Request>(py, &req)?;
         let old_sk = from_pystring::<SecretKey>(py, &old_secret_key)?;
         let old_pp = from_pystring::<PublicParameters>(py, &old_public_params)?;
@@ -132,7 +137,7 @@ impl ServerState {
         let mut rng = rand::thread_rng();
         let resp = self.state.handle_update(&mut rng, req, &old_sk, &old_pp)?;
 
-        return Ok(to_pystring(py, &resp))
+        return Ok(to_pystring(py, &resp));
     }
 }
 
@@ -250,10 +255,7 @@ impl UserState {
     }
 
     /// Creates a credential update request to be sent to the server.
-    pub fn make_credential_update_request(
-        &mut self,
-        py: Python<'_>
-    ) -> OoniResult<Py<PyString>>{
+    pub fn make_credential_update_request(&mut self, py: Python<'_>) -> OoniResult<Py<PyString>> {
         let mut rng = rand::thread_rng();
         let (request, new_state) = self.state.update_request(&mut rng)?;
         self.update_client_state = Some(new_state);
@@ -264,7 +266,11 @@ impl UserState {
     /// Handles the credential update response sent by the server, updating your credentials.
     ///
     /// This function only works if you previosly called `make_credential_update_request`
-    pub fn handle_credential_update_response(&mut self, py: Python<'_>, resp: Py<PyString>) -> OoniResult<()> {
+    pub fn handle_credential_update_response(
+        &mut self,
+        py: Python<'_>,
+        resp: Py<PyString>,
+    ) -> OoniResult<()> {
         let response = from_pystring::<update::Reply>(py, &resp)?;
 
         let update_state = self.update_client_state.take().expect(
@@ -354,6 +360,34 @@ mod tests {
                     )
                     .is_ok()
             );
+        });
+    }
+
+    #[test]
+    fn test_credential_update() {
+        pyo3::Python::initialize();
+        Python::attach(|py| {
+            let old_state = crate::ServerState::new();
+            let old_pub_params = old_state.get_public_parameters(py);
+            let old_secret_key = old_state.get_secret_key(py);
+
+            let mut client = crate::UserState::new(py, old_pub_params.clone_ref(py))
+                .expect("Unable to create client");
+
+            // Create new user state
+            let new_state = crate::ServerState::new();
+
+            let update_req = client
+                .make_credential_update_request(py)
+                .expect("Unable to make credential update request");
+
+            let resp = new_state
+                .handle_update_request(py, update_req, old_pub_params, old_secret_key)
+                .expect("Bad credential update request");
+
+            client
+                .handle_credential_update_response(py, resp)
+                .expect("Bad credential update response");
         });
     }
 
