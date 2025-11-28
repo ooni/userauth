@@ -2,6 +2,9 @@ use base64::prelude::*;
 use ooniauth_core as ooni;
 use ooniauth_core::registration::open_registration;
 use ooniauth_core::submit::submit;
+use ooniauth_core::update::*;
+
+
 use pyo3::{
     prelude::*,
     types::{PyList, PyString},
@@ -134,6 +137,7 @@ pub struct UserState {
     pub state: ooni::UserState,
     pub registration_client_state: Option<open_registration::ClientState>,
     pub submit_client_state: Option<submit::ClientState>,
+    pub update_client_state: Option<update::ClientState>,
 }
 
 #[gen_stub_pymethods]
@@ -146,6 +150,7 @@ impl UserState {
             state: ooni::UserState::new(params),
             registration_client_state: None,
             submit_client_state: None,
+            update_client_state: None,
         })
     }
 
@@ -229,6 +234,34 @@ impl UserState {
         );
 
         self.state.handle_submit_response(submit_state, response)?;
+
+        Ok(())
+    }
+
+    /// Creates a credential update request to be sent to the server.
+    pub fn make_credential_update_request(
+        &mut self,
+        py: Python<'_>
+    ) -> OoniResult<Py<PyString>>{
+        let mut rng = rand::thread_rng();
+        let (request, new_state) = self.state.update_request(&mut rng)?;
+        self.update_client_state = Some(new_state);
+
+        Ok(to_pystring(py, &request))
+    }
+
+    /// Handles the credential update response sent by the server, updating your credentials.
+    ///
+    /// This function only works if you previosly called `make_credential_update_request`
+    pub fn handle_credential_update_response(&mut self, py: Python<'_>, resp: Py<PyString>) -> OoniResult<()> {
+        let response = from_pystring::<update::Reply>(py, &resp)?;
+
+        let update_state = self.update_client_state.take().expect(
+            "Calling `handle_submit_response` without a submit client state. \
+                    Did you forget to call `make_submit_request` before?",
+        );
+
+        self.state.handle_update_response(update_state, response)?;
 
         Ok(())
     }
