@@ -298,8 +298,7 @@ mod tests {
     use base64::{Engine, prelude::BASE64_STANDARD};
     use ooniauth_core::{ServerState, UserState, registration::open_registration::Request};
     use pyo3::{
-        Py,
-        Python,
+        Py, Python,
         types::{PyList, PyString},
     };
     use rand::{rngs::ThreadRng, thread_rng};
@@ -381,9 +380,15 @@ mod tests {
             let new_state = crate::ServerState::new();
 
             // Register
-            let register_req = client.make_registration_request(py).expect("Unable to make registration request");
-            let resp = old_state.handle_registration_request(py, register_req).expect("Unable to handle registration request");
-            client.handle_registration_response(py, resp).expect("Unable to handle registration response");
+            let register_req = client
+                .make_registration_request(py)
+                .expect("Unable to make registration request");
+            let resp = old_state
+                .handle_registration_request(py, register_req)
+                .expect("Unable to handle registration request");
+            client
+                .handle_registration_response(py, resp)
+                .expect("Unable to handle registration response");
 
             // Update credential
             client.state.pp = new_state.state.public_parameters();
@@ -413,35 +418,48 @@ mod tests {
                 .expect("Unable to create client");
 
             // Register
-            let register_req = client.make_registration_request(py).expect("Unable to make registration request");
-            let resp = old_state.handle_registration_request(py, register_req).expect("Unable to handle registration request");
-            client.handle_registration_response(py, resp).expect("Unable to handle registration response");
+            let register_req = client
+                .make_registration_request(py)
+                .expect("Unable to make registration request");
+            let resp = old_state
+                .handle_registration_request(py, register_req)
+                .expect("Unable to handle registration request");
+            client
+                .handle_registration_response(py, resp)
+                .expect("Unable to handle registration response");
 
             // submit measurement
-            let probe_cc : Py<PyString> = PyString::new(py, "VE").into();
-            let probe_asn : Py<PyString> = PyString::new(py, "AS8048").into();
+            let probe_cc: Py<PyString> = PyString::new(py, "VE").into();
+            let probe_asn: Py<PyString> = PyString::new(py, "AS8048").into();
             let today = ServerState::today();
-            let age_range : Py<PyList> = PyList::new(py, vec![today - 30, today + 1]).unwrap().into();
-            let count_range : Py<PyList> = PyList::new(py, vec![0, 100]).unwrap().into();
+            let age_range: Py<PyList> =
+                PyList::new(py, vec![today - 30, today + 1]).unwrap().into();
+            let count_range: Py<PyList> = PyList::new(py, vec![0, 100]).unwrap().into();
 
-            let submit = client.make_submit_request(
-                py,
-                probe_cc.clone_ref(py),
-                probe_asn.clone_ref(py),
-                ServerState::today()
-            ).expect("Unable to make submit request");
+            let submit = client
+                .make_submit_request(
+                    py,
+                    probe_cc.clone_ref(py),
+                    probe_asn.clone_ref(py),
+                    ServerState::today(),
+                )
+                .expect("Unable to make submit request");
 
-            let resp = old_state.handle_submit_request(
-                py,
-                submit.nym,
-                submit.request,
-                probe_cc.clone_ref(py),
-                probe_asn.clone_ref(py),
-                age_range.clone_ref(py),
-                count_range.clone_ref(py)
-            ).expect("Invalid submit request");
+            let resp = old_state
+                .handle_submit_request(
+                    py,
+                    submit.nym,
+                    submit.request,
+                    probe_cc.clone_ref(py),
+                    probe_asn.clone_ref(py),
+                    age_range.clone_ref(py),
+                    count_range.clone_ref(py),
+                )
+                .expect("Invalid submit request");
 
-            client.handle_submit_response(py, resp).expect("Bad submit response");
+            client
+                .handle_submit_response(py, resp)
+                .expect("Bad submit response");
 
             // Create new server state and update credentials
             let new_state = crate::ServerState::new();
@@ -460,24 +478,30 @@ mod tests {
                 .expect("Bad credential update response");
 
             // Now make sure you can send another measurement
-            let submit = client.make_submit_request(
-                py,
-                probe_cc.clone_ref(py),
-                probe_asn.clone_ref(py),
-                ServerState::today()
-            ).expect("Unable to make submit request");
+            let submit = client
+                .make_submit_request(
+                    py,
+                    probe_cc.clone_ref(py),
+                    probe_asn.clone_ref(py),
+                    ServerState::today(),
+                )
+                .expect("Unable to make submit request");
 
-            let resp = new_state.handle_submit_request(
-                py,
-                submit.nym,
-                submit.request,
-                probe_cc,
-                probe_asn,
-                age_range,
-                count_range
-            ).expect("Invalid submit request");
+            let resp = new_state
+                .handle_submit_request(
+                    py,
+                    submit.nym,
+                    submit.request,
+                    probe_cc,
+                    probe_asn,
+                    age_range,
+                    count_range,
+                )
+                .expect("Invalid submit request");
 
-            client.handle_submit_response(py, resp).expect("Bad submit response");
+            client
+                .handle_submit_response(py, resp)
+                .expect("Bad submit response");
         });
     }
 
