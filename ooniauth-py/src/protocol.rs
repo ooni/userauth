@@ -303,8 +303,6 @@ mod tests {
     };
     use rand::{rngs::ThreadRng, thread_rng};
 
-    use crate::utils::to_pystring;
-
     #[test]
     fn test_encoding_verifies() {
         // Check that the string encoding still let us verify
