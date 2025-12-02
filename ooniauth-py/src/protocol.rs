@@ -137,7 +137,7 @@ impl ServerState {
         let mut rng = rand::thread_rng();
         let resp = self.state.handle_update(&mut rng, req, &old_sk, &old_pp)?;
 
-        return Ok(to_pystring(py, &resp));
+        Ok(to_pystring(py, &resp))
     }
 }
 
