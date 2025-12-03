@@ -8,24 +8,27 @@ class CredentialError(builtins.Exception):
     r"""
     An authentication error
     """
+
     ...
 
 class DeserializationFailed(builtins.Exception):
     r"""
     An error trying to deserialize a binary buffer
     """
+
     ...
 
 class ProtocolError(builtins.Exception):
     r"""
     An error performing the protocol
     """
+
     ...
 
 class ServerState:
     def __new__(cls) -> ServerState: ...
     @staticmethod
-    def from_creds(public_parameters:str, secret_key:str) -> ServerState:
+    def from_creds(public_parameters: str, secret_key: str) -> ServerState:
         r"""
         Create a new server state from binary-serialized public and private keys
         This is meant to be used by the server, so it can store the keys somewhere and recreate the
