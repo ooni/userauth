@@ -48,6 +48,9 @@ class ServerState:
         age_range: list,
         measurement_count_range: list,
     ) -> str: ...
+    def handle_update_request(
+        self, req: str, old_public_params: str, old_secret_key: str
+    ) -> str: ...
 
 class SubmitRequest:
     @property
@@ -75,4 +78,14 @@ class UserState:
 
         Note that this function will only work if you previously called
         `make_submit_request`
+        """
+    def make_credential_update_request(self) -> str:
+        r"""
+        Creates a credential update request to be sent to the server.
+        """
+    def handle_credential_update_response(self, resp: str) -> None:
+        r"""
+        Handles the credential update response sent by the server, updating your credentials.
+
+        This function only works if you previosly called `make_credential_update_request`
         """
