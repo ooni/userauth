@@ -174,6 +174,12 @@ impl UserState {
         self.state.get_credential().map(|c| to_pystring(py, c))
     }
 
+    pub fn set_public_params(&mut self, py: Python<'_>, new_public_params : Py<PyString>) -> OoniResult<()>{
+        let params = from_pystring(py, &new_public_params)?;
+        self.state.pp = params;
+        Ok(())
+    }
+
     pub fn make_registration_request(&mut self, py: Python<'_>) -> OoniResult<Py<PyString>> {
         let mut rng = rand::thread_rng();
 
@@ -389,7 +395,7 @@ mod tests {
                 .expect("Unable to handle registration response");
 
             // Update credential
-            client.state.pp = new_state.state.public_parameters();
+            client.set_public_params(py, new_state.get_public_parameters(py)).expect("Unable to change public params");
             let update_req = client
                 .make_credential_update_request(py)
                 .expect("Unable to make credential update request");
@@ -461,7 +467,7 @@ mod tests {
 
             // Create new server state and update credentials
             let new_state = crate::ServerState::new();
-            client.state.pp = new_state.state.public_parameters();
+            client.set_public_params(py, new_state.get_public_parameters(py)).expect("Unable to change public params");
 
             let update_req = client
                 .make_credential_update_request(py)
