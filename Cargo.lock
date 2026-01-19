@@ -1031,6 +1031,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ooniauth-ffi"
+version = "0.1.0"
+dependencies = [
+ "hex",
+ "ooniauth-core",
+ "rand",
+]
+
+[[package]]
 name = "oorandom"
 version = "11.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
