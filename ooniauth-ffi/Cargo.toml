@@ -10,3 +10,5 @@ crate-type = ["cdylib", "staticlib"]
 hex = "0.4"
 ooniauth-core = { path = "../ooniauth-core" }
 rand = "0.8.5"
+tracing-forest = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "registry"] }
