@@ -67,7 +67,7 @@ fn run_basic_usage_demo() -> Result<String, String> {
 
     let probe_cc = "US".to_string();
     let probe_asn = "AS1234".to_string();
-    let today = server.today();
+    let today = ServerState::today();
     let age_range = (today - 30)..(today + 1);
     let measurement_count_range = 0..100;
 
