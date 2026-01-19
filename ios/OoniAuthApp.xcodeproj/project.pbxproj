@@ -7,17 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2A4190692DF1CCE6004F1A4F /* noir_multiplier2.json in Resources */ = {isa = PBXBuildFile; fileRef = 2A4190682DF1CCE6004F1A4F /* noir_multiplier2.json */; };
-		2A41906B2DF1CCED004F1A4F /* noir_multiplier2.srs in Resources */ = {isa = PBXBuildFile; fileRef = 2A41906A2DF1CCED004F1A4F /* noir_multiplier2.srs */; };
-		2A5992332CC7750C00135402 /* plonk_fibonacci_vk.bin in Resources */ = {isa = PBXBuildFile; fileRef = 2A5992322CC7750C00135402 /* plonk_fibonacci_vk.bin */; };
-		2A5992342CC7750C00135402 /* plonk_fibonacci_srs.bin in Resources */ = {isa = PBXBuildFile; fileRef = 2A5992312CC7750C00135402 /* plonk_fibonacci_srs.bin */; };
-		2A5992352CC7750C00135402 /* plonk_fibonacci_pk.bin in Resources */ = {isa = PBXBuildFile; fileRef = 2A5992302CC7750C00135402 /* plonk_fibonacci_pk.bin */; };
 		2A59923A2CC77A7E00135402 /* OoniAuthFFI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A5992362CC77A7E00135402 /* OoniAuthFFI.swift */; };
 		37AB9B142EB3AEE700EDF5DE /* OoniAuthFFI.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A5992372CC77A7E00135402 /* OoniAuthFFI.xcframework */; settings = {ATTRIBUTES = (Required, ); }; };
 		37AB9B152EB3AEE700EDF5DE /* OoniAuthFFI.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 2A5992372CC77A7E00135402 /* OoniAuthFFI.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		E11808962E5CBDB000B8B284 /* noir_multiplier2.vk in Resources */ = {isa = PBXBuildFile; fileRef = E11808952E5CBDB000B8B284 /* noir_multiplier2.vk */; };
-		E11808972E5CBDB000B8B284 /* noir_multiplier2.vk in Resources */ = {isa = PBXBuildFile; fileRef = E11808952E5CBDB000B8B284 /* noir_multiplier2.vk */; };
-		E11808982E5CBDB000B8B284 /* noir_multiplier2.vk in Resources */ = {isa = PBXBuildFile; fileRef = E11808952E5CBDB000B8B284 /* noir_multiplier2.vk */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -52,17 +44,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		2A4190682DF1CCE6004F1A4F /* noir_multiplier2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = noir_multiplier2.json; sourceTree = "<group>"; };
-		2A41906A2DF1CCED004F1A4F /* noir_multiplier2.srs */ = {isa = PBXFileReference; lastKnownFileType = file; path = noir_multiplier2.srs; sourceTree = "<group>"; };
 		2A5991EC2CC7722900135402 /* OoniAuthApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OoniAuthApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2A5991FC2CC7722A00135402 /* OoniAuthAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OoniAuthAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2A5992062CC7722A00135402 /* OoniAuthAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OoniAuthAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		2A5992302CC7750C00135402 /* plonk_fibonacci_pk.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = plonk_fibonacci_pk.bin; sourceTree = "<group>"; };
-		2A5992312CC7750C00135402 /* plonk_fibonacci_srs.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = plonk_fibonacci_srs.bin; sourceTree = "<group>"; };
-		2A5992322CC7750C00135402 /* plonk_fibonacci_vk.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = plonk_fibonacci_vk.bin; sourceTree = "<group>"; };
 		2A5992362CC77A7E00135402 /* OoniAuthFFI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OoniAuthFFI.swift; sourceTree = "<group>"; };
 		2A5992372CC77A7E00135402 /* OoniAuthFFI.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = OoniAuthFFI.xcframework; sourceTree = "<group>"; };
-		E11808952E5CBDB000B8B284 /* noir_multiplier2.vk */ = {isa = PBXFileReference; lastKnownFileType = file; path = noir_multiplier2.vk; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -117,12 +103,6 @@
 				2A5992092CC7722A00135402 /* OoniAuthAppUITests */,
 				2A5991ED2CC7722900135402 /* Products */,
 				2A5992382CC77A7E00135402 /* OoniAuthBindings */,
-				2A5992302CC7750C00135402 /* plonk_fibonacci_pk.bin */,
-				2A5992312CC7750C00135402 /* plonk_fibonacci_srs.bin */,
-				2A5992322CC7750C00135402 /* plonk_fibonacci_vk.bin */,
-				2A4190682DF1CCE6004F1A4F /* noir_multiplier2.json */,
-				2A41906A2DF1CCED004F1A4F /* noir_multiplier2.srs */,
-				E11808952E5CBDB000B8B284 /* noir_multiplier2.vk */,
 			);
 			sourceTree = "<group>";
 		};
@@ -266,12 +246,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2A5992332CC7750C00135402 /* plonk_fibonacci_vk.bin in Resources */,
-				E11808972E5CBDB000B8B284 /* noir_multiplier2.vk in Resources */,
-				2A5992342CC7750C00135402 /* plonk_fibonacci_srs.bin in Resources */,
-				2A41906B2DF1CCED004F1A4F /* noir_multiplier2.srs in Resources */,
-				2A5992352CC7750C00135402 /* plonk_fibonacci_pk.bin in Resources */,
-				2A4190692DF1CCE6004F1A4F /* noir_multiplier2.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -279,7 +253,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E11808982E5CBDB000B8B284 /* noir_multiplier2.vk in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -287,7 +260,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E11808962E5CBDB000B8B284 /* noir_multiplier2.vk in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
