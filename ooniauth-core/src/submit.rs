@@ -347,7 +347,10 @@ mod tests {
         let ((request, client_state), nym) = result.unwrap();
 
         // Verify the request is valid
-        assert!(request.as_bytes().len() > 0, "Request should have content");
+        assert!(
+            !request.as_bytes().is_empty(),
+            "Request should have content"
+        );
 
         // Verify NYM is computed (check it's not all zeros)
         assert_ne!(&nym, &[0u8; 32], "NYM should not be all zeros");

@@ -28,6 +28,7 @@ struct ContentView: View {
 
             ScrollView {
                 Text(log)
+                    .font(.system(.body, design: .monospaced))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)
                     .padding(.vertical, 4)
