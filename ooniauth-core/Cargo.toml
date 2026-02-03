@@ -34,3 +34,7 @@ test = true
 [[bench]]
 name = "bench_server"
 harness = false
+
+[[bench]]
+name = "bench_basic_usage"
+harness = false
