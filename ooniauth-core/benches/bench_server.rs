@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
 use ooniauth_core::{ServerState, UserState};
 use rand::{rngs::ThreadRng, thread_rng};
 use std::hint::black_box;
@@ -61,5 +61,39 @@ fn bench_submit(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_registration, bench_submit);
+fn bench_update(c: &mut Criterion) {
+    let mut rng = thread_rng();
+    let old_server = ServerState::new(&mut rng);
+    let mut user = UserState::new(old_server.public_parameters());
+
+    let (reg_request, reg_state) = user.request(&mut rng).unwrap();
+    let reg_response = old_server.open_registration(reg_request).unwrap();
+    user.handle_response(reg_state, reg_response).unwrap();
+
+    let new_server = ServerState::new(&mut rng);
+    user.pp = new_server.public_parameters();
+
+    c.bench_function("server.handle_update", |b| {
+        b.iter_batched(
+            || {
+                let mut rng = thread_rng();
+                let (update_request, _update_state) = user.update_request(&mut rng).unwrap();
+                (rng, update_request)
+            },
+            |(mut rng, update_request)| {
+                new_server
+                    .handle_update(
+                        &mut rng,
+                        update_request,
+                        old_server.secret_key_ref(),
+                        old_server.public_parameters_ref(),
+                    )
+                    .unwrap();
+            },
+            BatchSize::SmallInput,
+        )
+    });
+}
+
+criterion_group!(benches, bench_registration, bench_submit, bench_update);
 criterion_main!(benches);

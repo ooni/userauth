@@ -36,5 +36,5 @@ name = "bench_server"
 harness = false
 
 [[bench]]
-name = "bench_basic_usage"
+name = "bench_client"
 harness = false
