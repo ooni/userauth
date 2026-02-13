@@ -509,6 +509,23 @@ mod tests {
         });
     }
 
+    #[test]
+    fn test_hardcoded_registration() {
+        const PUBLIC_PARAMETERS: &str = "ASAAAAAAAAAAzLK7uRcUcEOv/iH7euZEYC/iq8V8qLDr9zithEFOLHkBIAAAAAAAAACa7nTvnsZkee0GzA7WpB3h5Cs+nAeO8565IoNQb0J+PQMAAAAAAAAAIAAAAAAAAACIbdIQE6ncNQnpwiPD+A+MK6BWJ2cH3YgO8ZqKXkoHLyAAAAAAAAAAhMri5/9eH0gmcqX5Wcl5c542uhEYZ4lzkGiF9HTaaikgAAAAAAAAADaR3/LIMmgwMn0mI3GE5Ne5yZggruLtQJ1Vlw3Np5Fi";
+        const SECRET_KEY: &str = "ASAAAAAAAAAA+BeAZQVb1MJlj5BD62XqLQjyhdnydBqmMkgn68/CtwIgAAAAAAAAAL/vpyoP2IKbmS4/y60sCTImQt51W9XJ0pfLQrXVYIIKAwAAAAAAAAAgAAAAAAAAABsf2Gc8lEgwoLgLhgc3150B99abv+Ck5AZyMk5F9+4FIAAAAAAAAAAAJVuYC876XWU/XQDw/flKsEbsEODdl7wLfSoFakMbBSAAAAAAAAAAeYIi5t038dBzXAYO+g4I8GlTeCoPXp22jqlHbw7ySgg=";
+        const REGISTRATION_REQ: &str = "IAAAAAAAAABm0PFeZTIEfYVI4ELe2WPurbsydk43RD8/0GwlNIxwJmAAAAAAAAAA5AZ2uIMnkS3mAkx5GmeBb8c9Sip7UVnhTgW+fK4AEjgCVCgyiezirxBikvk5JJdMlFFysOQ3sLKRkfJeC5pagQ7kL/5hzuRbNxu+Mvf/MfJOFUpSI7CBsx1NrMzYRomN";
+
+        pyo3::Python::initialize();
+        Python::attach(|py|{
+            let public_parameters_py: Py<PyString> = PyString::new(py, PUBLIC_PARAMETERS).into();
+            let secret_key_py: Py<PyString> = PyString::new(py, SECRET_KEY).into();
+            let registration_req_py: Py<PyString> = PyString::new(py, REGISTRATION_REQ).into();
+
+            let server_state = crate::ServerState::from_creds(py, public_parameters_py, secret_key_py).unwrap();
+            server_state.handle_registration_request(py, registration_req_py).expect("Unable to handle registration request");
+        });
+    }
+
     fn setup() -> (ThreadRng, UserState, ServerState) {
         let mut rng = thread_rng();
         let server = ServerState::new(&mut rng);
