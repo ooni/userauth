@@ -15,8 +15,6 @@ pub mod errors;
 pub mod registration;
 pub mod submit;
 pub mod update;
-pub mod user_submit;
-pub mod user_registration;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ServerState {
