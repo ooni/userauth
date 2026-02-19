@@ -9,6 +9,7 @@
 use super::{Scalar, G};
 use super::{ServerState, UserState};
 use cmz::*;
+use curve25519_dalek::RistrettoPoint;
 use group::Group;
 use rand::{CryptoRng, RngCore};
 use sha2::Sha512;
@@ -39,38 +40,49 @@ muCMZProtocol! {open_registration,
     UAC: UserAuthCredential { nym_id: J, age: S, measurement_count: I},
 }
 
+pub fn request(
+    pp: &CMZPubkey<RistrettoPoint>,
+    rng: &mut (impl RngCore + CryptoRng),
+) -> Result<(open_registration::Request, open_registration::ClientState), CMZError> {
+    cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
+
+    let mut UAC = UserAuthCredential::using_pubkey(pp);
+    // For registration, age and measurement_count will be set by the server
+    // But we need to provide some initial values for the protocol
+    UAC.measurement_count = Some(Scalar::ZERO);
+    open_registration::prepare(rng, SESSION_ID, UAC).map_err(|_| CMZError::CliProofFailed)
+}
+
+pub fn handle_request_response(
+    state: open_registration::ClientState,
+    rep: open_registration::Reply,
+) -> Result<UserAuthCredential, CMZError> {
+    let replybytes = rep.as_bytes();
+    let recvreply = open_registration::Reply::try_from(&replybytes[..]).unwrap();
+    state
+        .finalize(recvreply)
+        .map_err(|_| CMZError::IssProofFailed)
+}
+
 impl UserState {
     pub fn request(
         &self,
         rng: &mut (impl RngCore + CryptoRng),
     ) -> Result<(open_registration::Request, open_registration::ClientState), CMZError> {
-        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
-
-        let mut UAC = UserAuthCredential::using_pubkey(&self.pp);
-        // For registration, age and measurement_count will be set by the server
-        // But we need to provide some initial values for the protocol
-        UAC.measurement_count = Some(Scalar::ZERO);
-        match open_registration::prepare(rng, SESSION_ID, UAC) {
-            Ok(req_state) => Ok(req_state),
-            Err(_) => Err(CMZError::CliProofFailed),
-        }
+        return request(&self.pp, rng);
     }
-}
 
-impl UserState {
     pub fn handle_response(
         &mut self,
         state: open_registration::ClientState,
         rep: open_registration::Reply,
     ) -> Result<(), CMZError> {
-        let replybytes = rep.as_bytes();
-        let recvreply = open_registration::Reply::try_from(&replybytes[..]).unwrap();
-        match state.finalize(recvreply) {
+        match handle_request_response(state, rep) {
             Ok(cred) => {
                 self.credential = Some(cred.clone());
                 Ok(())
             }
-            Err(_e) => Err(CMZError::IssProofFailed),
+            Err(_) => Err(CMZError::IssProofFailed),
         }
     }
 }

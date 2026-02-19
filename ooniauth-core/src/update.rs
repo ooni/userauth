@@ -2,6 +2,7 @@ use super::{PublicParameters, SecretKey, ServerState, UserState, G};
 use crate::errors::CredentialError;
 use crate::registration::UserAuthCredential;
 use cmz::*;
+use curve25519_dalek::RistrettoPoint;
 use group::Group;
 use rand::{CryptoRng, RngCore};
 use sha2::Sha512;
@@ -16,13 +17,38 @@ muCMZProtocol!(update,
     Old.measurement_count = New.measurement_count
 );
 
+pub fn update_request(
+    old: &UserAuthCredential,
+    pp: &CMZPubkey<RistrettoPoint>,
+    rng: &mut (impl RngCore + CryptoRng),
+) -> Result<(update::Request, update::ClientState), CredentialError> {
+    cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
+
+    let mut new = UserAuthCredential::using_pubkey(pp);
+    new.nym_id = old.nym_id;
+    new.age = old.age;
+    new.measurement_count = old.measurement_count;
+
+    update::prepare(rng, SESSION_ID, old, new)
+        .map_err(|_| CredentialError::CMZError(CMZError::CliProofFailed))
+}
+
+pub fn handle_update_response(
+    state: update::ClientState,
+    rep: update::Reply,
+) -> Result<UserAuthCredential, CMZError> {
+    let replybytes = rep.as_bytes();
+    let recvreply = update::Reply::try_from(&replybytes[..]).unwrap();
+    state
+        .finalize(recvreply)
+        .map_err(|_| CMZError::IssProofFailed)
+}
+
 impl UserState {
     pub fn update_request(
         &self,
         rng: &mut (impl RngCore + CryptoRng),
     ) -> Result<(update::Request, update::ClientState), CredentialError> {
-        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
-
         let old = self
             .credential
             .as_ref()
@@ -31,13 +57,7 @@ impl UserState {
                 String::from("No credential available"),
             ))?;
 
-        let mut new = UserAuthCredential::using_pubkey(&self.pp);
-        new.nym_id = old.nym_id;
-        new.age = old.age;
-        new.measurement_count = old.measurement_count;
-
-        update::prepare(rng, SESSION_ID, old, new)
-            .map_err(|_| CredentialError::CMZError(CMZError::CliProofFailed))
+        return update_request(old, &self.pp, rng);
     }
 
     pub fn handle_update_response(
@@ -45,9 +65,7 @@ impl UserState {
         state: update::ClientState,
         rep: update::Reply,
     ) -> Result<(), CMZError> {
-        let replybytes = rep.as_bytes();
-        let recvreply = update::Reply::try_from(&replybytes[..]).unwrap();
-        match state.finalize(recvreply) {
+        match handle_update_response(state, rep) {
             Ok(cred) => {
                 self.credential = Some(cred);
                 Ok(())

@@ -1,13 +1,12 @@
-use std::u32;
-
 use super::{scalar_u32, ServerState, UserState, G};
 use crate::errors::CredentialError;
 use crate::registration::UserAuthCredential;
 use cmz::*;
 use curve25519_dalek::RistrettoPoint;
-use group::{Group, GroupEncoding};
+use group::Group;
 use rand::{CryptoRng, RngCore};
-use sha2::Sha512;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256, Sha512};
 
 const SESSION_ID: &[u8] = b"submit";
 
@@ -23,6 +22,142 @@ muCMZProtocol!(submit<min_age_today, max_age, min_measurement_count,
     (min_measurement_count..=max_measurement_count).contains(Old.measurement_count)
 );
 
+/// A request for a measurement submission.
+///
+/// A [`SubmitRequest`] embeds the core submission request and the
+/// nym, computed as an elliptic curve point.
+///
+/// The nym provided at the application layer is not the elliptic curve point,
+/// but a hash of it. The reason for this is to avoid leaving DDH-related points
+/// in the open database, and rather just have a "fingerprint" at the application layer.
+///
+/// The core verification funtionality still needs this points, it's added here for this reason.
+#[derive(Serialize, Deserialize, Clone)]
+pub struct SubmitRequest {
+    core_request: submit::Request,
+    nym_point: RistrettoPoint,
+}
+
+impl SubmitRequest {
+    pub fn as_bytes(&self) -> Vec<u8> {
+        bincode::serialize(self).expect("failed to serialize SubmitRequest")
+    }
+}
+
+fn digest_point(point: RistrettoPoint) -> [u8; 32] {
+    let digest = Sha256::digest(point.compress().as_bytes());
+    let mut out = [0u8; 32];
+    out.copy_from_slice(&digest);
+    out
+}
+
+pub fn submit_request(
+    old: &UserAuthCredential,
+    pp: &CMZPubkey<RistrettoPoint>,
+    rng: &mut (impl RngCore + CryptoRng),
+    probe_cc: String,
+    probe_asn: String,
+    age_range: std::ops::Range<u32>,
+    measurement_count_range: std::ops::Range<u32>,
+) -> Result<((SubmitRequest, submit::ClientState), [u8; 32]), CredentialError> {
+    cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
+
+    // Domain-specific generator and NYM computation
+    let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
+    let DOMAIN = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
+    let NYM = old.nym_id.unwrap() * DOMAIN;
+
+    // Ensure the credential timestamp is within the allowed range
+    let age: u32 = match scalar_u32(&old.age.unwrap()) {
+        Some(v) => v,
+        None => {
+            return Err(CredentialError::InvalidField(
+                String::from("age"),
+                String::from("could not be converted to u32"),
+            ))
+        }
+    };
+
+    // Check if credential timestamp is within the allowed range
+    // age_range represents the valid timestamp range (min_timestamp..max_timestamp)
+
+    // Check if credential is too old (timestamp too early)
+    if age < age_range.start {
+        return Err(CredentialError::CredentialExpired);
+    }
+
+    // Check if credential is too new (timestamp too recent)
+    if age >= age_range.end {
+        return Err(CredentialError::TimeThresholdNotMet(age - age_range.end));
+    }
+
+    // The measurement count has to be within the allowed range
+    let measurement_count: u32 = match scalar_u32(&old.measurement_count.unwrap()) {
+        Some(v) => v,
+        None => {
+            return Err(CredentialError::InvalidField(
+                String::from("measurement_count"),
+                String::from("could not be converted to u32"),
+            ))
+        }
+    };
+    if measurement_count < measurement_count_range.start {
+        return Err(CredentialError::InvalidField(
+            String::from("measurement_count"),
+            format!(
+                "measurement_count {} is below minimum {}",
+                measurement_count, measurement_count_range.start
+            ),
+        ));
+    }
+    if measurement_count >= measurement_count_range.end {
+        return Err(CredentialError::InvalidField(
+            String::from("measurement_count"),
+            format!(
+                "measurement_count {} is at or above maximum {}",
+                measurement_count, measurement_count_range.end
+            ),
+        ));
+    }
+
+    //let NYM = PRF(nym_id, nym_scope.format(probe_cc, probe_asn))
+    let mut New = UserAuthCredential::using_pubkey(pp);
+    New.nym_id = old.nym_id;
+    New.age = old.age;
+    New.measurement_count = Some((measurement_count + 1).into());
+    let params = submit::Params {
+        min_age_today: age_range.start.into(),
+        max_age: age_range.end.into(),
+        min_measurement_count: measurement_count_range.start.into(),
+        max_measurement_count: measurement_count_range.end.into(),
+        DOMAIN,
+        NYM,
+    };
+
+    match submit::prepare(rng, SESSION_ID, old, New, &params) {
+        Ok((core_request, client_state)) => {
+            let probe_id = digest_point(NYM);
+            let request = SubmitRequest {
+                core_request,
+                nym_point: NYM,
+            };
+            Ok(((request, client_state), probe_id))
+        }
+        Err(_) => Err(CredentialError::CMZError(CMZError::CliProofFailed)),
+    }
+}
+
+pub fn handle_submit_response(
+    state: submit::ClientState,
+    rep: submit::Reply,
+) -> Result<UserAuthCredential, CMZError> {
+    let replybytes = rep.as_bytes();
+    let recvreply = submit::Reply::try_from(&replybytes[..]).unwrap();
+    state
+        .finalize(recvreply)
+        .map_err(|_| CMZError::IssProofFailed)
+}
+
 impl UserState {
     pub fn submit_request(
         &self,
@@ -31,9 +166,7 @@ impl UserState {
         probe_asn: String,
         age_range: std::ops::Range<u32>,
         measurement_count_range: std::ops::Range<u32>,
-    ) -> Result<((submit::Request, submit::ClientState), [u8; 32]), CredentialError> {
-        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
-
+    ) -> Result<((SubmitRequest, submit::ClientState), [u8; 32]), CredentialError> {
         // Get the current credential
         let Old = self
             .credential
@@ -43,82 +176,15 @@ impl UserState {
                 String::from("No credential available"),
             ))?;
 
-        // Domain-specific generator and NYM computation
-        let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
-        let DOMAIN = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
-        let NYM = Old.nym_id.unwrap() * DOMAIN;
-
-        // Ensure the credential timestamp is within the allowed range
-        let age: u32 = match scalar_u32(&Old.age.unwrap()) {
-            Some(v) => v,
-            None => {
-                return Err(CredentialError::InvalidField(
-                    String::from("age"),
-                    String::from("could not be converted to u32"),
-                ))
-            }
-        };
-
-        // Check if credential timestamp is within the allowed range
-        // age_range represents the valid timestamp range (min_timestamp..max_timestamp)
-
-        // Check if credential is too old (timestamp too early)
-        if age < age_range.start {
-            return Err(CredentialError::CredentialExpired);
-        }
-
-        // Check if credential is too new (timestamp too recent)
-        if age >= age_range.end {
-            return Err(CredentialError::TimeThresholdNotMet(age - age_range.end));
-        }
-
-        // The measurement count has to be within the allowed range
-        let measurement_count: u32 = match scalar_u32(&Old.measurement_count.unwrap()) {
-            Some(v) => v,
-            None => {
-                return Err(CredentialError::InvalidField(
-                    String::from("measurement_count"),
-                    String::from("could not be converted to u32"),
-                ))
-            }
-        };
-        if measurement_count < measurement_count_range.start {
-            return Err(CredentialError::InvalidField(
-                String::from("measurement_count"),
-                format!(
-                    "measurement_count {} is below minimum {}",
-                    measurement_count, measurement_count_range.start
-                ),
-            ));
-        }
-        if measurement_count >= measurement_count_range.end {
-            return Err(CredentialError::InvalidField(
-                String::from("measurement_count"),
-                format!(
-                    "measurement_count {} is at or above maximum {}",
-                    measurement_count, measurement_count_range.end
-                ),
-            ));
-        }
-
-        //let NYM = PRF(nym_id, nym_scope.format(probe_cc, probe_asn))
-        let mut New = UserAuthCredential::using_pubkey(&self.pp);
-        New.nym_id = Old.nym_id;
-        New.age = Old.age;
-        New.measurement_count = Some((measurement_count + 1).into());
-        let params = submit::Params {
-            min_age_today: age_range.start.into(),
-            max_age: age_range.end.into(),
-            min_measurement_count: measurement_count_range.start.into(),
-            max_measurement_count: measurement_count_range.end.into(),
-            DOMAIN,
-            NYM,
-        };
-
-        match submit::prepare(rng, SESSION_ID, &Old, New, &params) {
-            Ok(req_state) => Ok((req_state, NYM.compress().to_bytes())),
-            Err(_) => Err(CredentialError::CMZError(CMZError::CliProofFailed)),
-        }
+        return submit_request(
+            Old,
+            &self.pp,
+            rng,
+            probe_cc,
+            probe_asn,
+            age_range,
+            measurement_count_range,
+        );
     }
 
     pub fn handle_submit_response(
@@ -126,9 +192,7 @@ impl UserState {
         state: submit::ClientState,
         rep: submit::Reply,
     ) -> Result<(), CMZError> {
-        let replybytes = rep.as_bytes();
-        let recvreply = submit::Reply::try_from(&replybytes[..]).unwrap();
-        match state.finalize(recvreply) {
+        match handle_submit_response(state, rep) {
             Ok(cred) => {
                 self.credential = Some(cred);
                 Ok(())
@@ -139,26 +203,33 @@ impl UserState {
 }
 
 impl ServerState {
+    #[allow(clippy::too_many_arguments)]
     pub fn handle_submit(
         &self,
         rng: &mut (impl RngCore + CryptoRng),
-        req: submit::Request,
-        nym: &[u8; 32],
+        req: SubmitRequest,
+        probe_id: &[u8; 32],
         probe_cc: &str,
         probe_asn: &str,
         age_range: std::ops::Range<u32>,
         measurement_count_range: std::ops::Range<u32>,
     ) -> Result<submit::Reply, CMZError> {
-        let reqbytes = req.as_bytes();
+        let SubmitRequest {
+            core_request: recvreq,
+            nym_point,
+        } = req;
 
-        let recvreq = submit::Request::try_from(&reqbytes[..]).unwrap();
         let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
         let DOMAIN = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
 
-        // Parse the NYM bytes back to RistrettoPoint
-        let nym_point = RistrettoPoint::from_bytes(nym)
-            .into_option()
-            .ok_or(CMZError::IssProofFailed)?;
+        // The probe id is the same as the nym point.
+        // Otherwise, return an error.
+        // We do not really care about the server returning early here,
+        // a malicious probe should already have computed the probe ID from the
+        // (malicious) group element.
+        if &digest_point(nym_point) != probe_id {
+            return Err(CMZError::IssProofFailed);
+        }
 
         let params = submit::Params {
             min_age_today: age_range.start.into(),
