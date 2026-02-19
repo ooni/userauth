@@ -153,7 +153,9 @@ pub fn handle_submit_response(
 ) -> Result<UserAuthCredential, CMZError> {
     let replybytes = rep.as_bytes();
     let recvreply = submit::Reply::try_from(&replybytes[..]).unwrap();
-    state.finalize(recvreply).map_err(|_| CMZError::IssProofFailed)
+    state
+        .finalize(recvreply)
+        .map_err(|_| CMZError::IssProofFailed)
 }
 
 impl UserState {
@@ -174,7 +176,15 @@ impl UserState {
                 String::from("No credential available"),
             ))?;
 
-        return submit_request(Old, &self.pp, rng, probe_cc, probe_asn, age_range, measurement_count_range);
+        return submit_request(
+            Old,
+            &self.pp,
+            rng,
+            probe_cc,
+            probe_asn,
+            age_range,
+            measurement_count_range,
+        );
     }
 
     pub fn handle_submit_response(

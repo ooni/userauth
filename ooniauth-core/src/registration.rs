@@ -9,9 +9,9 @@
 use super::{Scalar, G};
 use super::{ServerState, UserState};
 use cmz::*;
+use curve25519_dalek::RistrettoPoint;
 use group::Group;
 use rand::{CryptoRng, RngCore};
-use curve25519_dalek::RistrettoPoint;
 use sha2::Sha512;
 
 const SESSION_ID: &[u8] = b"registration";
@@ -55,11 +55,13 @@ pub fn request(
 
 pub fn handle_request_response(
     state: open_registration::ClientState,
-    rep: open_registration::Reply
+    rep: open_registration::Reply,
 ) -> Result<UserAuthCredential, CMZError> {
     let replybytes = rep.as_bytes();
     let recvreply = open_registration::Reply::try_from(&replybytes[..]).unwrap();
-    state.finalize(recvreply).map_err(|_| CMZError::IssProofFailed)
+    state
+        .finalize(recvreply)
+        .map_err(|_| CMZError::IssProofFailed)
 }
 
 impl UserState {
@@ -69,7 +71,7 @@ impl UserState {
     ) -> Result<(open_registration::Request, open_registration::ClientState), CMZError> {
         return request(&self.pp, rng);
     }
-    
+
     pub fn handle_response(
         &mut self,
         state: open_registration::ClientState,
@@ -79,7 +81,6 @@ impl UserState {
             Ok(cred) => {
                 self.credential = Some(cred.clone());
                 Ok(())
-
             }
             Err(_) => Err(CMZError::IssProofFailed),
         }
