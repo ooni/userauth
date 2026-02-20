@@ -31,7 +31,7 @@ impl ServerState {
         }
     }
 
-    /// Create a new server state from binary-serialized public and private keys
+    /// Create a new server state from base64-encoded keys
     /// This is meant to be used by the server, so it can store the keys somewhere and recreate the
     /// state when needed
     #[staticmethod]
@@ -314,10 +314,10 @@ mod tests {
         // Check that the string encoding still let us verify
         let (mut rng, client, server) = setup();
         let (req, _state) = client.request(&mut rng).unwrap();
-        let req_bin = req.as_bytes();
+        let req_bin = postcard::to_allocvec(&req).unwrap();
         let req_str = BASE64_STANDARD.encode(req_bin);
         let req_bin = BASE64_STANDARD.decode(req_str).unwrap();
-        let req = bincode::deserialize::<Request>(&req_bin).unwrap();
+        let req = postcard::from_bytes::<Request>(&req_bin).unwrap();
         assert!(server.open_registration(req).is_ok());
     }
 

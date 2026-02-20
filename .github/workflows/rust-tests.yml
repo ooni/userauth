@@ -1,0 +1,44 @@
+name: Rust tests
+
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  core-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Run tests
+        run: cargo test -p ooniauth-core --all-targets --locked --verbose
+
+  python-bindings:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Build and install ooniauth-py with maturin
+        working-directory: ooniauth-py
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          python -m pip install -U pip
+          python -m pip install -U maturin
+          maturin develop --locked
+      - name: Verify Python import
+        working-directory: ooniauth-py
+        run: |
+          source .venv/bin/activate
+          python -c "import ooniauth_py"

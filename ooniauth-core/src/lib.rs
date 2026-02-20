@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use sha2::Sha512;
 use subtle::ConstantTimeEq;
 pub mod errors;
+pub mod fuzzing;
 pub mod registration;
 pub mod submit;
 pub mod update;
