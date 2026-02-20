@@ -24,7 +24,7 @@ create_exception! {
     ooniauth-py,
     DeserializationFailed,
     PyException,
-    "An error trying to deserialize a binary buffer"
+    "An error trying to deserialize a base64-encoded payload"
 }
 
 // TODO Q: should I create a new python exception per variant of errors::CredentialError?
