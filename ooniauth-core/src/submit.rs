@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256, Sha512};
 
 const SESSION_ID: &[u8] = b"submit";
+const POINT_DIGEST_SALT: &[u8] = b"v1:ooniauth-submit-point-salt";
 
 muCMZProtocol!(submit<min_age_today, max_age, min_measurement_count,
         max_measurement_count, @DOMAIN, @NYM>,
@@ -45,10 +46,27 @@ impl SubmitRequest {
 }
 
 fn digest_point(point: RistrettoPoint) -> [u8; 32] {
-    let digest = Sha256::digest(point.compress().as_bytes());
+    let mut hasher = Sha256::new();
+    hasher.update(POINT_DIGEST_SALT);
+    hasher.update(point.compress().as_bytes());
+    let digest = hasher.finalize();
     let mut out = [0u8; 32];
     out.copy_from_slice(&digest);
     out
+}
+
+fn domain_point(probe_cc: &str, probe_asn: &str) -> G {
+    let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
+    let domain_bytes = domain_str.as_bytes();
+    let domain_len = u64::try_from(domain_bytes.len())
+        .expect("domain length should always fit in u64")
+        .to_be_bytes();
+    let mut bytes =
+        Vec::with_capacity(POINT_DIGEST_SALT.len() + domain_len.len() + domain_bytes.len());
+    bytes.extend_from_slice(POINT_DIGEST_SALT);
+    bytes.extend_from_slice(&domain_len);
+    bytes.extend_from_slice(domain_bytes);
+    G::hash_from_bytes::<Sha512>(&bytes)
 }
 
 pub fn submit_request(
@@ -63,8 +81,7 @@ pub fn submit_request(
     cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
 
     // Domain-specific generator and NYM computation
-    let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
-    let DOMAIN = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
+    let DOMAIN = domain_point(&probe_cc, &probe_asn);
     let NYM = old.nym_id.unwrap() * DOMAIN;
 
     // Ensure the credential timestamp is within the allowed range
@@ -219,8 +236,7 @@ impl ServerState {
             nym_point,
         } = req;
 
-        let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
-        let DOMAIN = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
+        let DOMAIN = domain_point(probe_cc, probe_asn);
 
         // The probe id is the same as the nym point.
         // Otherwise, return an error.
@@ -270,8 +286,7 @@ impl ServerState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Scalar, ServerState, UserState, G};
-    use sha2::Sha512;
+    use crate::{Scalar, ServerState, UserState};
 
     #[test]
     fn test_domain_nym_computation() {
@@ -280,16 +295,14 @@ mod tests {
 
         let probe_cc = "US";
         let probe_asn = "AS1234";
-        let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
-        let domain = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
+        let domain = domain_point(probe_cc, probe_asn);
 
         // Test with a known nym_id
         let nym_id = Scalar::from(42u32);
         let nym = nym_id * domain;
 
         // Different domain should produce different NYM
-        let different_domain_str = format!("ooni.org/{}/{}", "UK", "AS5678");
-        let different_domain = G::hash_from_bytes::<Sha512>(different_domain_str.as_bytes());
+        let different_domain = domain_point("UK", "AS5678");
         let different_nym = nym_id * different_domain;
 
         assert_ne!(
