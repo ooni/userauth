@@ -80,6 +80,11 @@ impl UserState {
         }
     }
 
+    /// Hydrate the user state from a saved credential
+    pub fn set_credential(&mut self, credential: UserAuthCredential) {
+        self.credential = Some(credential);
+    }
+
     /// Get a reference to the current credential
     pub fn get_credential(&self) -> Option<&UserAuthCredential> {
         self.credential.as_ref()
