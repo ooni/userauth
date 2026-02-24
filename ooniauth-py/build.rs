@@ -1,3 +1,7 @@
+// Build helper for plain Cargo workflows.
+// Maturin usually sets Python link flags; this script queries `python3-config`
+// and emits equivalent linker directives so `cargo build/test` can link PyO3.
+// This is needed because Cargo does not automatically inherit Maturin's linker setup.
 use std::process::Command;
 
 fn main() {
