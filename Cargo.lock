@@ -1016,6 +1016,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ooniauth-ffi"
+version = "0.1.0"
+dependencies = [
+ "hex",
+ "ooniauth-core",
+ "rand",
+ "tracing-forest",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "ooniauth_py"
 version = "0.1.0"
 dependencies = [
@@ -1028,15 +1039,6 @@ dependencies = [
  "rand",
  "serde",
  "thiserror 2.0.18",
-]
-
-[[package]]
-name = "ooniauth-ffi"
-version = "0.1.0"
-dependencies = [
- "hex",
- "ooniauth-core",
- "rand",
 ]
 
 [[package]]
