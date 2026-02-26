@@ -53,7 +53,14 @@ fn digest_point(point: RistrettoPoint) -> [u8; 32] {
 }
 
 impl UserState {
-    #[instrument(skip(self, rng))]
+    #[instrument(skip(
+        self,
+        rng,
+        probe_cc,
+        probe_asn,
+        age_range,
+        measurement_count_range
+    ))]
     pub fn submit_request(
         &self,
         rng: &mut (impl RngCore + CryptoRng),
@@ -63,10 +70,6 @@ impl UserState {
         measurement_count_range: std::ops::Range<u32>,
     ) -> Result<((SubmitRequest, submit::ClientState), [u8; 32]), CredentialError> {
         trace!("Starting submit request");
-        debug!(
-            "Age range: {:?}, Measurement count range: {:?}",
-            age_range, measurement_count_range
-        );
         cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
 
         // Get the current credential
@@ -80,7 +83,7 @@ impl UserState {
 
         // Domain-specific generator and NYM computation
         let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
-        trace!("Computing DOMAIN for: {}", domain_str);
+        trace!("Computing DOMAIN for submit request");
         let DOMAIN = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
         let NYM = Old.nym_id.unwrap() * DOMAIN;
         debug!("NYM computed successfully");
@@ -189,7 +192,16 @@ impl UserState {
 
 impl ServerState {
     #[allow(clippy::too_many_arguments)]
-    #[instrument(skip(self, rng, req))]
+    #[instrument(skip(
+        self,
+        rng,
+        req,
+        probe_id,
+        probe_cc,
+        probe_asn,
+        age_range,
+        measurement_count_range
+    ))]
     pub fn handle_submit(
         &self,
         rng: &mut (impl RngCore + CryptoRng),
@@ -201,10 +213,6 @@ impl ServerState {
         measurement_count_range: std::ops::Range<u32>,
     ) -> Result<submit::Reply, CMZError> {
         trace!("Server handling submit request");
-        debug!(
-            "Age range: {:?}, Measurement count range: {:?}",
-            age_range, measurement_count_range
-        );
         let SubmitRequest {
             core_request: recvreq,
             nym_point,
@@ -257,7 +265,7 @@ impl ServerState {
                 Ok(response)
             }
             Err(e) => {
-                debug!("Submit request verification failed: {:?}", e);
+                debug!("Submit request verification failed");
                 Err(e)
             }
         }
