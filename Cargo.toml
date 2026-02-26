@@ -9,4 +9,3 @@ bincode = "1"
 cmz = {git = "https://github.com/sigma-rs/cmz"}
 serde = "1.0.219"
 thiserror = "2.0.12"
-

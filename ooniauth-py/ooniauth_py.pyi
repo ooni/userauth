@@ -13,7 +13,7 @@ class CredentialError(builtins.Exception):
 
 class DeserializationFailed(builtins.Exception):
     r"""
-    An error trying to deserialize a binary buffer
+    An error trying to deserialize a base64-encoded payload
     """
 
     ...
@@ -30,7 +30,7 @@ class ServerState:
     @staticmethod
     def from_creds(public_parameters: str, secret_key: str) -> ServerState:
         r"""
-        Create a new server state from binary-serialized public and private keys
+        Create a new server state from base64-encoded keys
         This is meant to be used by the server, so it can store the keys somewhere and recreate the
         state when needed
         """

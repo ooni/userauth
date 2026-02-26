@@ -31,7 +31,7 @@ impl ServerState {
         }
     }
 
-    /// Create a new server state from binary-serialized public and private keys
+    /// Create a new server state from base64-encoded keys
     /// This is meant to be used by the server, so it can store the keys somewhere and recreate the
     /// state when needed
     #[staticmethod]
@@ -96,7 +96,7 @@ impl ServerState {
         let mut nym_32: [u8; 32] = [0; 32];
         nym_32.copy_from_slice(nym.as_ref());
 
-        let request = from_pystring::<submit::Request>(py, &request)?;
+        let request = from_pystring::<ooniauth_core::submit::SubmitRequest>(py, &request)?;
 
         let probe_cc = probe_cc.to_str(py).expect("Could not get str");
         let probe_asn = probe_asn.to_str(py).expect("Could not get str");
