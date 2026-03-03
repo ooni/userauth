@@ -10,10 +10,15 @@ use super::{Scalar, G};
 use super::{ServerState, UserState};
 use cmz::*;
 use group::Group;
-use rand::{CryptoRng, RngCore};
+use rand::rngs::StdRng;
+use rand::{CryptoRng, RngCore, SeedableRng};
 use sha2::Sha512;
 
 const SESSION_ID: &[u8] = b"registration";
+
+fn seeded_rng() -> StdRng {
+    StdRng::seed_from_u64(42)
+}
 
 CMZ! { UserAuthCredential:
     nym_id,
@@ -80,7 +85,8 @@ impl ServerState {
         &self,
         req: open_registration::Request,
     ) -> Result<open_registration::Reply, CMZError> {
-        let mut rng = rand::thread_rng();
+
+        let mut rng = seeded_rng();
         let reqbytes = req.as_bytes();
 
         let recvreq = open_registration::Request::try_from(&reqbytes[..]).unwrap();
@@ -108,7 +114,7 @@ mod tests {
 
     #[test]
     fn test_registration() {
-        let rng = &mut rand::thread_rng();
+        let rng = &mut seeded_rng();
         // Initialize group first for gen_keys
         let server_state = ServerState::new(rng);
         // Note: request() will call cmz_group_init again, but that's okay
@@ -148,7 +154,7 @@ mod tests {
         // This is a basic structure test since we need actual response data
         // TODO: Add full integration test when server implementation is ready
 
-        let rng = &mut rand::thread_rng();
+        let rng = &mut seeded_rng();
         let server_state = ServerState::new(rng);
         let user_state = UserState::new(server_state.public_parameters());
 

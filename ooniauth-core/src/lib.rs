@@ -51,6 +51,7 @@ impl ServerState {
     }
 
     pub fn from_creds(sk: SecretKey, pp: PublicParameters) -> Self {
+        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
         Self { sk, pp }
     }
 

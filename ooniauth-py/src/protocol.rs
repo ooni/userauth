@@ -3,6 +3,8 @@ use ooniauth_core::registration::open_registration;
 use ooniauth_core::submit::submit;
 use ooniauth_core::update::*;
 use ooniauth_core::{self as ooni, PublicParameters, SecretKey};
+use rand::rngs::StdRng;
+use rand::SeedableRng;
 
 use pyo3::{
     prelude::*,
@@ -12,6 +14,11 @@ use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 
 use crate::utils::{from_pystring, to_pystring};
 use crate::{OoniErr, exceptions::OoniResult};
+
+/// Deterministic RNG for reproducible behavior across all sessions. Change the seed for different sequences.
+fn seeded_rng() -> StdRng {
+    StdRng::seed_from_u64(42)
+}
 
 #[gen_stub_pyclass]
 #[pyclass]
@@ -25,7 +32,7 @@ pub struct ServerState {
 impl ServerState {
     #[new]
     pub fn new() -> Self {
-        let mut rng = rand::thread_rng();
+        let mut rng = seeded_rng();
         Self {
             state: ooni::ServerState::new(&mut rng),
         }
@@ -109,7 +116,7 @@ impl ServerState {
             .expect("could not get list");
 
         // Handle submission
-        let mut rng = rand::thread_rng();
+        let mut rng = seeded_rng();
         let result = self.state.handle_submit(
             &mut rng,
             request,
@@ -134,7 +141,7 @@ impl ServerState {
         let old_sk = from_pystring::<SecretKey>(py, &old_secret_key)?;
         let old_pp = from_pystring::<PublicParameters>(py, &old_public_params)?;
 
-        let mut rng = rand::thread_rng();
+        let mut rng = seeded_rng();
         let resp = self.state.handle_update(&mut rng, req, &old_sk, &old_pp)?;
 
         Ok(to_pystring(py, &resp))
@@ -181,7 +188,7 @@ impl UserState {
     }
 
     pub fn make_registration_request(&mut self, py: Python<'_>) -> OoniResult<Py<PyString>> {
-        let mut rng = rand::thread_rng();
+        let mut rng = seeded_rng();
 
         let (req, state) = self.state.request(&mut rng)?;
 
@@ -222,7 +229,7 @@ impl UserState {
         let probe_cc = probe_cc.to_str(py).expect("unable to get string");
         let probe_asn = probe_asn.to_str(py).expect("unable to get string");
 
-        let mut rng = rand::thread_rng();
+        let mut rng = seeded_rng();
         let ((result, client_state), nym) = self.state.submit_request(
             &mut rng,
             probe_cc.into(),
@@ -262,7 +269,7 @@ impl UserState {
 
     /// Creates a credential update request to be sent to the server.
     pub fn make_credential_update_request(&mut self, py: Python<'_>) -> OoniResult<Py<PyString>> {
-        let mut rng = rand::thread_rng();
+        let mut rng = seeded_rng();
         let (request, new_state) = self.state.update_request(&mut rng)?;
         self.update_client_state = Some(new_state);
 
@@ -307,7 +314,8 @@ mod tests {
         Py, Python,
         types::{PyList, PyString},
     };
-    use rand::{rngs::ThreadRng, thread_rng};
+    use rand::rngs::StdRng;
+    use super::seeded_rng;
 
     #[test]
     fn test_encoding_verifies() {
@@ -509,8 +517,8 @@ mod tests {
         });
     }
 
-    fn setup() -> (ThreadRng, UserState, ServerState) {
-        let mut rng = thread_rng();
+    fn setup() -> (StdRng, UserState, ServerState) {
+        let mut rng = seeded_rng();
         let server = ServerState::new(&mut rng);
         let pp = server.public_parameters();
         let user = UserState::new(pp);

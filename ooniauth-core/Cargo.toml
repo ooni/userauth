@@ -20,6 +20,7 @@ subtle = "2.6.1"
 thiserror = {workspace = true}
 syn = "2.0.103"
 hex = "0.4"
+base64 = "0.22.1"
 
 [dev-dependencies]
 criterion = { version = "0.5"}
