@@ -265,8 +265,7 @@ checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
 [[package]]
 name = "cmz"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d8fbff48222af12c16d0beced705160bda9423e6ad05b8aa2c39b73b7301869"
+source = "git+https://github.com/sigma-rs/cmz.git?branch=mu%2Ffix-determinism#63c782ac51710ca6837cbb08e623d415c85bd2f2"
 dependencies = [
  "cmz-derive",
  "ff",
