@@ -92,7 +92,7 @@ impl ServerState {
         req: open_registration::Request,
     ) -> Result<open_registration::Reply, CMZError> {
         trace!("Server opening registration");
-        let mut rng = rand::thread_rng();
+        let mut rng = seeded_rng();
         let reqbytes = req.as_bytes();
 
         let recvreq = open_registration::Request::try_from(&reqbytes[..]).unwrap();
