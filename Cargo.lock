@@ -265,7 +265,7 @@ checksum = "3a822ea5bc7590f9d40f1ba12c0dc3c2760f3482c6984db1573ad11031420831"
 [[package]]
 name = "cmz"
 version = "0.1.0"
-source = "git+https://github.com/sigma-rs/cmz#d7ae7f266272ee099a3a36c01979ec797ec78373"
+source = "git+https://github.com/sigma-rs/cmz.git?branch=main#3b1756b853b60b4fd5f0c0e8aa6f844bb611d1ce"
 dependencies = [
  "cmz-derive",
  "ff",
