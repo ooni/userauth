@@ -1,14 +1,14 @@
 # OONI User Auth
 
-To set this up you should run:
-```
-make include
+Run example:
+```bash
+cargo run -p ooniauth-core --release --example basic_usage
 ```
 
-Make sure you have setup ssh keys to clone the repositories listed in the
-Makefile.
+iOS build:
+Open `ios/OoniAuthApp.xcodeproj` in Xcode.
 
-You can then build it as usual with:
-```
-cargo build
+Criterion benchmark (same flow):
+```bash
+cargo bench -p ooniauth-core
 ```

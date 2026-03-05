@@ -11,7 +11,7 @@ use pyo3::{
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 
 use crate::utils::{from_pystring, to_pystring};
-use crate::{OoniErr, exceptions::OoniResult};
+use crate::{exceptions::OoniResult, OoniErr};
 
 #[gen_stub_pyclass]
 #[pyclass]
@@ -72,6 +72,7 @@ impl ServerState {
         ooni::ServerState::today()
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn handle_submit_request(
         &self,
         py: Python<'_>,
@@ -174,7 +175,11 @@ impl UserState {
         self.state.get_credential().map(|c| to_pystring(py, c))
     }
 
-    pub fn set_public_params(&mut self, py: Python<'_>, new_public_params : Py<PyString>) -> OoniResult<()>{
+    pub fn set_public_params(
+        &mut self,
+        py: Python<'_>,
+        new_public_params: Py<PyString>,
+    ) -> OoniResult<()> {
         let params = from_pystring(py, &new_public_params)?;
         self.state.pp = params;
         Ok(())
@@ -301,11 +306,11 @@ pub struct SubmitRequest {
 
 #[cfg(test)]
 mod tests {
-    use base64::{Engine, prelude::BASE64_STANDARD};
-    use ooniauth_core::{ServerState, UserState, registration::open_registration::Request};
+    use base64::{prelude::BASE64_STANDARD, Engine};
+    use ooniauth_core::{registration::open_registration::Request, ServerState, UserState};
     use pyo3::{
-        Py, Python,
         types::{PyList, PyString},
+        Py, Python,
     };
     use rand::{rngs::ThreadRng, thread_rng};
 
@@ -337,11 +342,9 @@ mod tests {
             let mut client = crate::UserState::new(py, server.get_public_parameters(py)).unwrap();
             let req = client.make_registration_request(py).unwrap();
             let reg_response = server.handle_registration_request(py, req).unwrap();
-            assert!(
-                client
-                    .handle_registration_response(py, reg_response)
-                    .is_ok()
-            );
+            assert!(client
+                .handle_registration_response(py, reg_response)
+                .is_ok());
 
             // Test submit
             let cc = PyString::new(py, "VE");
@@ -353,19 +356,17 @@ mod tests {
 
             let age_range = PyList::new(py, vec![today - 30, today + 1]).unwrap();
             let msm_range = PyList::new(py, vec![0, 100]).unwrap();
-            assert!(
-                server
-                    .handle_submit_request(
-                        py,
-                        submit_req.nym,
-                        submit_req.request,
-                        cc.into(),
-                        asn.into(),
-                        age_range.into(),
-                        msm_range.into()
-                    )
-                    .is_ok()
-            );
+            assert!(server
+                .handle_submit_request(
+                    py,
+                    submit_req.nym,
+                    submit_req.request,
+                    cc.into(),
+                    asn.into(),
+                    age_range.into(),
+                    msm_range.into()
+                )
+                .is_ok());
         });
     }
 
@@ -395,7 +396,9 @@ mod tests {
                 .expect("Unable to handle registration response");
 
             // Update credential
-            client.set_public_params(py, new_state.get_public_parameters(py)).expect("Unable to change public params");
+            client
+                .set_public_params(py, new_state.get_public_parameters(py))
+                .expect("Unable to change public params");
             let update_req = client
                 .make_credential_update_request(py)
                 .expect("Unable to make credential update request");
@@ -467,7 +470,9 @@ mod tests {
 
             // Create new server state and update credentials
             let new_state = crate::ServerState::new();
-            client.set_public_params(py, new_state.get_public_parameters(py)).expect("Unable to change public params");
+            client
+                .set_public_params(py, new_state.get_public_parameters(py))
+                .expect("Unable to change public params");
 
             let update_req = client
                 .make_credential_update_request(py)
