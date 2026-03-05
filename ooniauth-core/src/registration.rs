@@ -13,6 +13,7 @@ use group::Group;
 use rand::rngs::StdRng;
 use rand::{CryptoRng, RngCore, SeedableRng};
 use sha2::Sha512;
+use tracing::{instrument, trace};
 
 const SESSION_ID: &[u8] = b"registration";
 
@@ -45,10 +46,12 @@ muCMZProtocol! {open_registration,
 }
 
 impl UserState {
+    #[instrument(skip(self, rng))]
     pub fn request(
         &self,
         rng: &mut (impl RngCore + CryptoRng),
     ) -> Result<(open_registration::Request, open_registration::ClientState), CMZError> {
+        trace!("Starting registration request");
         cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
 
         let mut UAC = UserAuthCredential::using_pubkey(&self.pp);
@@ -63,11 +66,13 @@ impl UserState {
 }
 
 impl UserState {
+    #[instrument(skip(self, state, rep))]
     pub fn handle_response(
         &mut self,
         state: open_registration::ClientState,
         rep: open_registration::Reply,
     ) -> Result<(), CMZError> {
+        trace!("Handling registration response");
         let replybytes = rep.as_bytes();
         let recvreply = open_registration::Reply::try_from(&replybytes[..]).unwrap();
         match state.finalize(recvreply) {
@@ -81,12 +86,13 @@ impl UserState {
 }
 
 impl ServerState {
+    #[instrument(skip(self, req))]
     pub fn open_registration(
         &self,
         req: open_registration::Request,
     ) -> Result<open_registration::Reply, CMZError> {
-
-        let mut rng = seeded_rng();
+        trace!("Server opening registration");
+        let mut rng = rand::thread_rng();
         let reqbytes = req.as_bytes();
 
         let recvreq = open_registration::Request::try_from(&reqbytes[..]).unwrap();

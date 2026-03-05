@@ -1,5 +1,9 @@
 [workspace]
-members = ["ooniauth-core", "ooniauth-py"]
+members = [
+    "ooniauth-core",
+    "ooniauth-py",
+    "ooniauth-ffi"
+]
 resolver = "2"
 
 [workspace.dependencies]
