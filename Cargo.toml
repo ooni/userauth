@@ -20,7 +20,7 @@ thiserror = "2.0.12"
 cmz = { git = "https://github.com/sigma-rs/cmz", branch = "main" }
 cmz-core = { git = "https://github.com/sigma-rs/cmz", branch = "main" }
 cmz-derive = { git = "https://github.com/sigma-rs/cmz", branch = "main" }
-sigma-compiler = { git = "https://github.com/sigma-rs/sigma-compiler", branch = "main" }
-sigma-compiler-core = { git = "https://github.com/sigma-rs/sigma-compiler", branch = "main" }
-sigma-compiler-derive = { git = "https://github.com/sigma-rs/sigma-compiler", branch = "main" }
+sigma-compiler = { git = "https://github.com/sigma-rs/sigma-compiler", branch = "mu/fix-determinism" }
+sigma-compiler-core = { git = "https://github.com/sigma-rs/sigma-compiler", branch = "mu/fix-determinism" }
+sigma-compiler-derive = { git = "https://github.com/sigma-rs/sigma-compiler", branch = "mu/fix-determinism" }
 sigma-proofs = { git = "https://github.com/sigma-rs/sigma-proofs", branch = "main" }

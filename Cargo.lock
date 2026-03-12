@@ -2057,7 +2057,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 [[package]]
 name = "sigma-compiler"
 version = "0.1.0"
-source = "git+https://github.com/sigma-rs/sigma-compiler?branch=main#f00799f8dd734e9f7c90622fb48f2428c26431ce"
+source = "git+https://github.com/sigma-rs/sigma-compiler?branch=mu%2Ffix-determinism#2232a698c850e3cf718d25b0bc6cb15ffd603bfb"
 dependencies = [
  "group",
  "rand 0.8.5",
@@ -2069,7 +2069,7 @@ dependencies = [
 [[package]]
 name = "sigma-compiler-core"
 version = "0.1.0"
-source = "git+https://github.com/sigma-rs/sigma-compiler?branch=main#f00799f8dd734e9f7c90622fb48f2428c26431ce"
+source = "git+https://github.com/sigma-rs/sigma-compiler?branch=mu%2Ffix-determinism#2232a698c850e3cf718d25b0bc6cb15ffd603bfb"
 dependencies = [
  "clap",
  "prettyplease",
@@ -2081,7 +2081,7 @@ dependencies = [
 [[package]]
 name = "sigma-compiler-derive"
 version = "0.1.0"
-source = "git+https://github.com/sigma-rs/sigma-compiler?branch=main#f00799f8dd734e9f7c90622fb48f2428c26431ce"
+source = "git+https://github.com/sigma-rs/sigma-compiler?branch=mu%2Ffix-determinism#2232a698c850e3cf718d25b0bc6cb15ffd603bfb"
 dependencies = [
  "sigma-compiler-core",
  "syn 2.0.117",
