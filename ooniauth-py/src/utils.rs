@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{OoniResult, exceptions::OoniErr};
+use crate::{exceptions::OoniErr, OoniResult};
 use base64::prelude::*;
 use pyo3::{prelude::*, types::PyString};
 

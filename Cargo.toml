@@ -1,11 +1,24 @@
 [workspace]
-members = ["ooniauth-core", "ooniauth-py"]
+members = [
+    "ooniauth-core",
+    "ooniauth-py",
+    "ooniauth-ffi"
+]
 resolver = "2"
 
 [workspace.dependencies]
 rand = "0.8.5"
 bincode = "1"
-cmz = "0.1.0"
-# cmz = {git = "https://github.com/sigma-rs/cmz"}
+# cmz = "0.1.0"
+cmz = { git = "https://github.com/sigma-rs/cmz", branch = "main" }
 serde = "1.0.219"
 thiserror = "2.0.12"
+
+[patch.crates-io]
+cmz = { git = "https://github.com/sigma-rs/cmz", branch = "main" }
+cmz-core = { git = "https://github.com/sigma-rs/cmz", branch = "main" }
+cmz-derive = { git = "https://github.com/sigma-rs/cmz", branch = "main" }
+sigma-compiler = { git = "https://github.com/sigma-rs/sigma-compiler", branch = "main" }
+sigma-compiler-core = { git = "https://github.com/sigma-rs/sigma-compiler", branch = "main" }
+sigma-compiler-derive = { git = "https://github.com/sigma-rs/sigma-compiler", branch = "main" }
+sigma-proofs = { git = "https://github.com/sigma-rs/sigma-proofs", branch = "main" }
