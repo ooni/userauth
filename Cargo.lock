@@ -2056,12 +2056,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 [[package]]
 name = "sigma-compiler"
 version = "0.1.0"
-<<<<<<< HEAD
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "736016d29725f54ee767083ded55e1ddf46b9aa081ae0005423c2b36587ea0be"
-=======
 source = "git+https://github.com/sigma-rs/sigma-compiler?branch=main#f00799f8dd734e9f7c90622fb48f2428c26431ce"
->>>>>>> mu/fix-determinism
 dependencies = [
  "group",
  "rand 0.8.5",
