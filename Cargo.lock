@@ -2073,12 +2073,7 @@ dependencies = [
 [[package]]
 name = "sigma-compiler-core"
 version = "0.1.0"
-<<<<<<< HEAD
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6a96f60157d659e1f7ac2f04999490ca684cfc20c06a6de5aa5502880fa03b7"
-=======
 source = "git+https://github.com/sigma-rs/sigma-compiler?branch=main#f00799f8dd734e9f7c90622fb48f2428c26431ce"
->>>>>>> mu/fix-determinism
 dependencies = [
  "clap",
  "prettyplease",
@@ -2090,12 +2085,7 @@ dependencies = [
 [[package]]
 name = "sigma-compiler-derive"
 version = "0.1.0"
-<<<<<<< HEAD
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c11631f78f12c1eb5e424a6322f173f2ab37d2643de397fe605dfb9b06d4f86"
-=======
 source = "git+https://github.com/sigma-rs/sigma-compiler?branch=main#f00799f8dd734e9f7c90622fb48f2428c26431ce"
->>>>>>> mu/fix-determinism
 dependencies = [
  "sigma-compiler-core",
  "syn 2.0.117",
