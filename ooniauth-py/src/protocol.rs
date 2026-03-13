@@ -313,6 +313,7 @@ pub struct SubmitRequest {
 
 #[cfg(test)]
 mod tests {
+    use super::seeded_rng;
     use base64::{prelude::BASE64_STANDARD, Engine};
     use ooniauth_core::{registration::open_registration::Request, ServerState, UserState};
     use pyo3::{
@@ -320,7 +321,6 @@ mod tests {
         Py, Python,
     };
     use rand::rngs::StdRng;
-    use super::seeded_rng;
 
     #[test]
     fn test_encoding_verifies() {
