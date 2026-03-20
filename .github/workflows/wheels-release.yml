@@ -1,0 +1,57 @@
+name: Build Wheels and Release
+
+on:
+  push:
+    branches:
+      - "wheels-workflow"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  # Prefer building portable abi3 wheels without requiring a build-time interpreter.
+  PYO3_NO_PYTHON: "1"
+
+jobs:
+  wheels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install maturin
+        run: python -m pip install -U pip maturin
+
+      - name: Build wheels
+        working-directory: ooniauth-py
+        run: make wheels
+
+      - name: Create release tag
+        id: tag
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          TAG="wheels-${SHORT_SHA}-${GITHUB_RUN_NUMBER}"
+          git tag "$TAG" "${GITHUB_SHA}"
+          git push origin "$TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Upload wheels to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            ooniauth-py/wheels/*.whl
