@@ -42,7 +42,7 @@ jobs:
         id: tag
         run: |
           SHORT_SHA="${GITHUB_SHA::7}"
-          TAG="wheels-${SHORT_SHA}-${GITHUB_RUN_NUMBER}"
+          TAG="ooniauth-py-${SHORT_SHA}-${GITHUB_RUN_NUMBER}"
           git tag "$TAG" "${GITHUB_SHA}"
           git push origin "$TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
