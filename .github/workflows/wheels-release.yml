@@ -3,7 +3,8 @@ name: Build Wheels and Release
 on:
   push:
     branches:
-      - "wheels-workflow"
+      # - "wheels-workflow"
+      - "main"
   workflow_dispatch: {}
 
 permissions:
@@ -38,13 +39,11 @@ jobs:
         working-directory: ooniauth-py
         run: make wheels
 
-      - name: Create release tag
+      - name: Compute release tag name
         id: tag
         run: |
           SHORT_SHA="${GITHUB_SHA::7}"
           TAG="ooniauth-py-${SHORT_SHA}-${GITHUB_RUN_NUMBER}"
-          git tag "$TAG" "${GITHUB_SHA}"
-          git push origin "$TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Upload wheels to GitHub Release
@@ -52,6 +51,7 @@ jobs:
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: ${{ steps.tag.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           generate_release_notes: true
           files: |
             ooniauth-py/wheels/*.whl
