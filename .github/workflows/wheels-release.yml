@@ -56,8 +56,16 @@ jobs:
           files: |
             ooniauth-py/wheels/*.whl
 
+      - name: Check wheel artifacts
+        run: |
+          echo "Listing ooniauth-py/wheels:"
+          ls -la ooniauth-py/wheels || true
+          echo "Wheel files:"
+          ls -la ooniauth-py/wheels/*.whl || true
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        working-directory: ooniauth-py
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
-          packages-dir: ooniauth-py/wheels
+          packages-dir: wheels
