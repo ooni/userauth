@@ -3,8 +3,8 @@ name: Build Wheels and Release
 on:
   push:
     branches:
-      # - "wheels-workflow"
-      - "main"
+      - "wheels-workflow"
+      # - "main"
   workflow_dispatch: {}
 
 permissions:
