@@ -63,9 +63,15 @@ jobs:
           echo "Wheel files:"
           ls -la ooniauth-py/wheels/*.whl || true
 
+      - name: Stage wheels for PyPI
+        run: |
+          mkdir -p dist
+          cp -v ooniauth-py/wheels/*.whl dist/
+          echo "Staged wheel files:"
+          ls -la dist
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        working-directory: ooniauth-py
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
-          packages-dir: wheels
+          packages-dir: dist

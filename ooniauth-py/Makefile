@@ -21,4 +21,9 @@ test:
 # installation.
 # ooniprobe will specify this dependency as an url to the file hosted in Github
 wheels: all
-	cp ../target/wheels/*.whl ./wheels
+	@if [ -e wheels ] && [ ! -d wheels ]; then rm -f wheels; fi
+	@mkdir -p wheels
+	@TARGET_DIR="$${CARGO_TARGET_DIR:-../target}"; \
+	echo "Copying wheels from $$TARGET_DIR/wheels"; \
+	ls -la "$$TARGET_DIR"/wheels/*.whl; \
+	cp -v "$$TARGET_DIR"/wheels/*.whl ./wheels
