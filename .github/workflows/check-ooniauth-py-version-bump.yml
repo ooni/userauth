@@ -3,7 +3,7 @@ name: Check ooniauth-py version bump
 on:
   pull_request:
     branches:
-      - master
+      - main
     paths:
       - "ooniauth-py/**"
       - "ooniauth-core/**"
