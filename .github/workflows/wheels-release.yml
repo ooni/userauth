@@ -62,9 +62,9 @@ jobs:
       - name: Check wheel artifacts
         run: |
           echo "Listing ooniauth-py/wheels:"
-          ls -la ooniauth-py/wheels || true
+          ls -l ooniauth-py/wheels || true
           echo "Wheel files:"
-          ls -la ooniauth-py/wheels/*.whl || true
+          ls -l ooniauth-py/wheels/*.whl || true
 
       - name: Stage wheels for PyPI
         run: |
