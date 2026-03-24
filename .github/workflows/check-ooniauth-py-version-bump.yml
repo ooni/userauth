@@ -46,7 +46,7 @@ jobs:
           # Check that the new version is higher than the version in Main
           HIGHEST="$(printf '%s\n%s\n' "$MAIN_VERSION" "$PR_VERSION" | sort -V | tail -n1)"
           if [ "$PR_VERSION" = "$MAIN_VERSION" ] || [ "$HIGHEST" != "$PR_VERSION" ]; then
-            echo "::error::ooniauth-py version in $FILE must be strictly higher than main (main=$MAIN_VERSION, PR=$PR_VERSION)"
+            echo "::error::ooniauth-py version in $FILE must be strictly higher than main (main=$MAIN_VERSION, PR=$PR_VERSION). Otherwise the PyPi upload will fail after merge"
             exit 1
           fi
 
