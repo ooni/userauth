@@ -1,0 +1,52 @@
+name: Check ooniauth-py version bump
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - "ooniauth-py/**"
+      - "ooniauth-core/**"
+
+jobs:
+  check-version-bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check version bumped vs master
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          FILE="ooniauth-py/Cargo.toml"
+
+          if [ ! -f "$FILE" ]; then
+            echo "Missing $FILE in PR branch"
+            exit 1
+          fi
+
+          # Ensure master ref is available locally.
+          git fetch origin master --quiet
+
+          BASE_VERSION="$(git show origin/master:$FILE | sed -n 's/^version = "\(.*\)"/\1/p' | head -n1 || true)"
+          HEAD_VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' "$FILE" | head -n1 || true)"
+
+          if [ -z "$BASE_VERSION" ] || [ -z "$HEAD_VERSION" ]; then
+            echo "Could not parse version from $FILE"
+            echo "base='$BASE_VERSION' head='$HEAD_VERSION'"
+            exit 1
+          fi
+
+          echo "master version: $BASE_VERSION"
+          echo "PR version:     $HEAD_VERSION"
+
+          if [ "$BASE_VERSION" = "$HEAD_VERSION" ]; then
+            echo "::error::ooniauth-py version was not bumped in $FILE. This will trigger an error when trying to publish to PyPi"
+            exit 1
+          fi
+
+          echo "Version bump detected."
