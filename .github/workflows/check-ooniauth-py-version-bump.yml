@@ -1,5 +1,6 @@
 name: Check ooniauth-py version bump
-
+# This workflow checks that we're bumping the library version before publishing to PyPi.
+# If you don't bump it, the upload will fail after merge since you can only upload new versions
 on:
   pull_request:
     branches:
