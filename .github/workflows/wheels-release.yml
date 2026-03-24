@@ -5,6 +5,9 @@ on:
     branches:
       - "wheels-workflow"
       # - "main"
+    paths:
+      - "ooniauth-core/**"
+      - "ooniauth-py/**"
   workflow_dispatch: {}
 
 permissions:
