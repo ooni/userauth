@@ -49,4 +49,4 @@ jobs:
             exit 1
           fi
 
-          echo "Version bump detected."
+          echo "[OK] Version bump detected"
