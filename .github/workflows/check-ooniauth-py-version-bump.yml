@@ -29,24 +29,25 @@ jobs:
             exit 1
           fi
 
-          # Ensure main ref is available locally.
-          git fetch origin main --quiet
+          git fetch origin main
 
-          BASE_VERSION="$(git show origin/main:$FILE | sed -n 's/^version = "\(.*\)"/\1/p' | head -n1 || true)"
-          HEAD_VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' "$FILE" | head -n1 || true)"
+          MAIN_VERSION="$(git show origin/main:$FILE | sed -n 's/^version = "\(.*\)"/\1/p' | head -n1 || true)"
+          PR_VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' "$FILE" | head -n1 || true)"
 
-          if [ -z "$BASE_VERSION" ] || [ -z "$HEAD_VERSION" ]; then
+          if [ -z "$MAIN_VERSION" ] || [ -z "$PR_VERSION" ]; then
             echo "Could not parse version from $FILE"
-            echo "base='$BASE_VERSION' head='$HEAD_VERSION'"
+            echo "main='$MAIN_VERSION' pr='$PR_VERSION'"
             exit 1
           fi
 
-          echo "main version: $BASE_VERSION"
-          echo "PR version:     $HEAD_VERSION"
+          echo "main version: $MAIN_VERSION"
+          echo "PR version:     $PR_VERSION"
 
-          if [ "$BASE_VERSION" = "$HEAD_VERSION" ]; then
-            echo "::error::ooniauth-py version was not bumped in $FILE. This will trigger an error when trying to publish to PyPi"
+          # Check that the new version is higher than the version in Main
+          HIGHEST="$(printf '%s\n%s\n' "$MAIN_VERSION" "$PR_VERSION" | sort -V | tail -n1)"
+          if [ "$PR_VERSION" = "$MAIN_VERSION" ] || [ "$HIGHEST" != "$PR_VERSION" ]; then
+            echo "::error::ooniauth-py version in $FILE must be strictly higher than main (main=$MAIN_VERSION, PR=$PR_VERSION)"
             exit 1
           fi
 
-          echo "[OK] Version bump detected"
+          echo "[OK] Version bump detected (main=$MAIN_VERSION -> PR=$PR_VERSION)"
