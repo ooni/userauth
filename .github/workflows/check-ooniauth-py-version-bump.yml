@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check version bumped vs master
+      - name: Check version bumped vs main
         shell: bash
         run: |
           set -euo pipefail
@@ -29,10 +29,10 @@ jobs:
             exit 1
           fi
 
-          # Ensure master ref is available locally.
-          git fetch origin master --quiet
+          # Ensure main ref is available locally.
+          git fetch origin main --quiet
 
-          BASE_VERSION="$(git show origin/master:$FILE | sed -n 's/^version = "\(.*\)"/\1/p' | head -n1 || true)"
+          BASE_VERSION="$(git show origin/main:$FILE | sed -n 's/^version = "\(.*\)"/\1/p' | head -n1 || true)"
           HEAD_VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' "$FILE" | head -n1 || true)"
 
           if [ -z "$BASE_VERSION" ] || [ -z "$HEAD_VERSION" ]; then
@@ -41,7 +41,7 @@ jobs:
             exit 1
           fi
 
-          echo "master version: $BASE_VERSION"
+          echo "main version: $BASE_VERSION"
           echo "PR version:     $HEAD_VERSION"
 
           if [ "$BASE_VERSION" = "$HEAD_VERSION" ]; then
