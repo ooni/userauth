@@ -3,12 +3,10 @@ name: Build Wheels and Release
 on:
   push:
     branches:
-      - "wheels-workflow"
-      # - "main"
+      - "main"
     paths:
       - "ooniauth-core/**"
       - "ooniauth-py/**"
-      - ".github/workflows/wheels-release.yml"
   workflow_dispatch: {}
 
 permissions:
@@ -92,6 +90,7 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          # password: ${{ secrets.TEST_PYPI_API_TOKEN }} # use this for testing the workflow
           password: ${{ secrets.PYPI_API_TOKEN }}
           packages-dir: dist
           repository-url: https://test.pypi.org/legacy/
