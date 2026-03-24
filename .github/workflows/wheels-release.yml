@@ -87,6 +87,8 @@ jobs:
           files: |
             dist/*.whl
 
+      # This might fail with status code 400 if the version already exists,
+      # remember to bump it
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
