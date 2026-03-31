@@ -48,6 +48,9 @@ pub enum OoniErr {
 
     #[error("Deserialization Error: {reason}")]
     DeserializationFailed { reason: String },
+
+    #[error("Submit emission date {emission_date} cannot build the request window")]
+    SubmitDateOutOfRange { emission_date: u32 },
 }
 
 pub type OoniResult<T> = Result<T, OoniErr>;
@@ -62,6 +65,9 @@ impl From<OoniErr> for PyErr {
                 reason: errors::CredentialError::CMZError(e),
             } => ProtocolError::new_err(format!("{e}")),
             OoniErr::CredentialError { reason } => CredentialError::new_err(format!("{reason}")),
+            OoniErr::SubmitDateOutOfRange { emission_date } => ProtocolError::new_err(format!(
+                "submit emission date {emission_date} cannot build the request window"
+            )),
         }
     }
 }
