@@ -13,6 +13,40 @@ use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
 use crate::utils::{from_pystring, to_pystring};
 use crate::{exceptions::OoniResult, OoniErr};
 
+fn py_string_arg<'py>(
+    py: Python<'py>,
+    value: &'py Py<PyString>,
+    name: &str,
+) -> OoniResult<&'py str> {
+    value
+        .to_str(py)
+        .map_err(|e| OoniErr::DeserializationFailed {
+            reason: format!("invalid {name}: {e}"),
+        })
+}
+
+fn py_u32_range(
+    py: Python<'_>,
+    value: &Py<PyList>,
+    name: &str,
+) -> OoniResult<std::ops::Range<u32>> {
+    let range = value
+        .extract::<Vec<u32>>(py)
+        .map_err(|e| OoniErr::DeserializationFailed {
+            reason: format!("invalid {name}: {e}"),
+        })?;
+    let [start, end]: [u32; 2] =
+        range
+            .try_into()
+            .map_err(|range: Vec<u32>| OoniErr::DeserializationFailed {
+                reason: format!(
+                    "{name} must contain exactly 2 integers, got {}",
+                    range.len()
+                ),
+            })?;
+    Ok(start..end)
+}
+
 #[gen_stub_pyclass]
 #[pyclass]
 pub struct ServerState {
@@ -84,41 +118,33 @@ impl ServerState {
         measurement_count_range: Py<PyList>,
     ) -> OoniResult<Py<PyString>> {
         // Convert arguments from py types to rust types
-        let nym = nym.to_str(py).map_err(|e| OoniErr::DeserializationFailed {
-            reason: e.to_string(),
-        })?;
-
-        let nym = BASE64_STANDARD
-            .decode(nym)
+        let nym: [u8; 32] = BASE64_STANDARD
+            .decode(py_string_arg(py, &nym, "nym")?)
             .map_err(|e| OoniErr::DeserializationFailed {
                 reason: e.to_string(),
+            })?
+            .try_into()
+            .map_err(|nym: Vec<u8>| OoniErr::DeserializationFailed {
+                reason: format!("nym must decode to 32 bytes, got {}", nym.len()),
             })?;
 
-        let mut nym_32: [u8; 32] = [0; 32];
-        nym_32.copy_from_slice(nym.as_ref());
-
         let request = from_pystring::<ooniauth_core::submit::SubmitRequest>(py, &request)?;
-
-        let probe_cc = probe_cc.to_str(py).expect("Could not get str");
-        let probe_asn = probe_asn.to_str(py).expect("Could not get str");
-
-        let age_range = age_range
-            .extract::<Vec<u32>>(py)
-            .expect("could not get list");
-        let measurement_count_range = measurement_count_range
-            .extract::<Vec<u32>>(py)
-            .expect("could not get list");
+        let probe_cc = py_string_arg(py, &probe_cc, "probe_cc")?;
+        let probe_asn = py_string_arg(py, &probe_asn, "probe_asn")?;
+        let age_range = py_u32_range(py, &age_range, "age_range")?;
+        let measurement_count_range =
+            py_u32_range(py, &measurement_count_range, "measurement_count_range")?;
 
         // Handle submission
         let mut rng = rand::thread_rng();
         let result = self.state.handle_submit(
             &mut rng,
             request,
-            &nym_32,
+            &nym,
             probe_cc,
             probe_asn,
-            age_range[0]..age_range[1],
-            measurement_count_range[0]..measurement_count_range[1],
+            age_range,
+            measurement_count_range,
         )?;
 
         Ok(to_pystring(py, &result))
@@ -306,6 +332,7 @@ pub struct SubmitRequest {
 
 #[cfg(test)]
 mod tests {
+    use crate::OoniErr;
     use base64::{prelude::BASE64_STANDARD, Engine};
     use ooniauth_core::{registration::open_registration::Request, ServerState, UserState};
     use pyo3::{
@@ -511,6 +538,68 @@ mod tests {
             client
                 .handle_submit_response(py, resp)
                 .expect("Bad submit response");
+        });
+    }
+
+    fn submit_fixture(
+        py: Python<'_>,
+    ) -> (
+        crate::ServerState,
+        crate::SubmitRequest,
+        Py<PyString>,
+        Py<PyString>,
+        Py<PyList>,
+        Py<PyList>,
+    ) {
+        let server = crate::ServerState::new();
+        let mut client = crate::UserState::new(py, server.get_public_parameters(py)).unwrap();
+        let req = client.make_registration_request(py).unwrap();
+        let resp = server.handle_registration_request(py, req).unwrap();
+        client.handle_registration_response(py, resp).unwrap();
+        let cc: Py<PyString> = PyString::new(py, "VE").into();
+        let asn: Py<PyString> = PyString::new(py, "AS1234").into();
+        let today = crate::ServerState::today();
+        let submit = client
+            .make_submit_request(py, cc.clone_ref(py), asn.clone_ref(py), today)
+            .unwrap();
+        let age_range: Py<PyList> = PyList::new(py, vec![today - 30, today + 1]).unwrap().into();
+        let count_range: Py<PyList> = PyList::new(py, vec![0, 100]).unwrap().into();
+        (server, submit, cc, asn, age_range, count_range)
+    }
+
+    #[test]
+    fn test_handle_submit_request_rejects_short_nym() {
+        pyo3::Python::initialize();
+        Python::attach(|py| {
+            let (server, submit, cc, asn, age_range, count_range) = submit_fixture(py);
+            let bad_nym = PyString::new(py, &BASE64_STANDARD.encode([7u8; 31])).into();
+            let err = server
+                .handle_submit_request(py, bad_nym, submit.request, cc, asn, age_range, count_range)
+                .unwrap_err();
+            assert!(matches!(err, OoniErr::DeserializationFailed { .. }));
+        });
+    }
+
+    #[test]
+    fn test_handle_submit_request_rejects_short_age_range() {
+        pyo3::Python::initialize();
+        Python::attach(|py| {
+            let (server, submit, cc, asn, _age_range, count_range) = submit_fixture(py);
+            let short_range = PyList::new(py, vec![crate::ServerState::today()])
+                .unwrap()
+                .into();
+            let err = server
+                .handle_submit_request(
+                    py,
+                    submit.nym,
+                    submit.request,
+                    cc,
+                    asn,
+                    short_range,
+                    count_range,
+                )
+                .unwrap_err();
+            assert!(matches!(err, OoniErr::DeserializationFailed { .. }));
         });
     }
 
