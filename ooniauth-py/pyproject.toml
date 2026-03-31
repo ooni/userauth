@@ -4,13 +4,21 @@ build-backend = "maturin"
 
 [project]
 name = "ooniauth-py"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dynamic = ["version"]
+license = "BSD-3-Clause"
+license-files = ["LICEN[CS]E*"]
+description = "Python bindings for the userauth library: the anonymous credentials implementation used in OONI"
+readme = "README.md"
+
+[project.urls]
+Homepage = "https://github.com/ooni/userauth"
+Issues = "https://github.com/ooni/userauth/issues"
+
 [tool.maturin]
 features = ["pyo3/extension-module"]
-

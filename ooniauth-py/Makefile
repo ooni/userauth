@@ -21,4 +21,9 @@ test:
 # installation.
 # ooniprobe will specify this dependency as an url to the file hosted in Github
 wheels: all
-	cp ../target/wheels/*.whl ./wheels
+	mkdir -p wheels
+	# This makes it behave consistently between CI and locally
+	TARGET_DIR="$${CARGO_TARGET_DIR:-../target}"; \
+	echo "Copying wheels from $$TARGET_DIR/wheels"; \
+	ls -la "$$TARGET_DIR"/wheels/*.whl; \
+	cp -v "$$TARGET_DIR"/wheels/*.whl ./wheels
