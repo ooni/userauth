@@ -8,9 +8,12 @@ mod utils;
 pub use exceptions::*;
 pub use protocol::*;
 
+pyo3_stub_gen::module_variable!("ooniauth-py", "__version__", &str);
+
 /// Here we define the python module itself and its members
 #[pymodule]
 fn ooniauth_py(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_class::<ServerState>()?;
     m.add_class::<UserState>()?;
     m.add_class::<SubmitRequest>()?;
