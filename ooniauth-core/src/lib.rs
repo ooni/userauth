@@ -2,6 +2,9 @@
 // to be capital letters
 #![allow(non_snake_case)]
 
+/// Version of this crate (`ooniauth-core`), from `Cargo.toml`.
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 use cmz::*;
 use curve25519_dalek::ristretto::RistrettoPoint as G;
 use group::Group;

@@ -14,6 +14,7 @@ pyo3_stub_gen::module_variable!("ooniauth-py", "__version__", &str);
 #[pymodule]
 fn ooniauth_py(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+    m.add_function(wrap_pyfunction!(get_protocol_version, m)?)?;
     m.add_class::<ServerState>()?;
     m.add_class::<UserState>()?;
     m.add_class::<SubmitRequest>()?;

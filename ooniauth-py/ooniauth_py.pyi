@@ -4,7 +4,7 @@
 import builtins
 import typing
 
-__version__: str
+__version__: builtins.str
 
 class CredentialError(builtins.Exception):
     r"""
@@ -96,3 +96,8 @@ class UserState:
 
         This function only works if you previosly called `make_credential_update_request`
         """
+
+def get_protocol_version() -> builtins.str:
+    r"""
+    Returns the version of the `ooniauth-core`, the actual protocol implementation.
+    """
