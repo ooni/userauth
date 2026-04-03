@@ -8,10 +8,17 @@ use pyo3::{
     prelude::*,
     types::{PyList, PyString},
 };
-use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pymethods};
+use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pyfunction, gen_stub_pymethods};
 
 use crate::utils::{from_pystring, to_pystring};
 use crate::{exceptions::OoniResult, OoniErr};
+
+/// Returns the version of the `ooniauth-core`, the actual protocol implementation.
+#[gen_stub_pyfunction(module = "ooniauth-py")]
+#[pyfunction]
+pub fn get_protocol_version() -> &'static str {
+    ooniauth_core::VERSION
+}
 
 #[gen_stub_pyclass]
 #[pyclass]
