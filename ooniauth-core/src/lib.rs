@@ -2,9 +2,6 @@
 // to be capital letters
 #![allow(non_snake_case)]
 
-/// Version of this crate (`ooniauth-core`), from `Cargo.toml`.
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
-
 use cmz::*;
 use curve25519_dalek::ristretto::RistrettoPoint as G;
 use group::Group;
@@ -18,6 +15,9 @@ pub mod errors;
 pub mod registration;
 pub mod submit;
 pub mod update;
+
+/// Version of this crate (`ooniauth-core`), from `Cargo.toml`.
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ServerState {
