@@ -52,6 +52,10 @@ fn digest_point(point: RistrettoPoint) -> [u8; 32] {
     out
 }
 
+fn inclusive_upper_bound(range: &std::ops::Range<u32>) -> u32 {
+    range.end.saturating_sub(1)
+}
+
 impl UserState {
     #[instrument(skip(
         self,
@@ -148,9 +152,9 @@ impl UserState {
         New.measurement_count = Some((measurement_count + 1).into());
         let params = submit::Params {
             min_age_today: age_range.start.into(),
-            max_age: age_range.end.into(),
+            max_age: inclusive_upper_bound(&age_range).into(),
             min_measurement_count: measurement_count_range.start.into(),
-            max_measurement_count: measurement_count_range.end.into(),
+            max_measurement_count: inclusive_upper_bound(&measurement_count_range).into(),
             DOMAIN,
             NYM,
         };
@@ -232,9 +236,9 @@ impl ServerState {
 
         let params = submit::Params {
             min_age_today: age_range.start.into(),
-            max_age: age_range.end.into(),
+            max_age: inclusive_upper_bound(&age_range).into(),
             min_measurement_count: measurement_count_range.start.into(),
-            max_measurement_count: measurement_count_range.end.into(),
+            max_measurement_count: inclusive_upper_bound(&measurement_count_range).into(),
             DOMAIN,
             NYM: nym_point,
         };
@@ -301,6 +305,12 @@ mod tests {
             nym, different_nym,
             "Different domains should produce different NYMs"
         );
+    }
+
+    #[test]
+    fn test_inclusive_upper_bound() {
+        assert_eq!(inclusive_upper_bound(&(10..11)), 10);
+        assert_eq!(inclusive_upper_bound(&(0..1)), 0);
     }
 
     #[test]
