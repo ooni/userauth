@@ -229,8 +229,8 @@ impl UserState {
         py: Python<'_>,
         probe_cc: Py<PyString>,
         probe_asn: Py<PyString>,
-        age_range: [u32; 2],
-        measurement_count_range: [u32; 2],
+        age_range: (u32, u32),
+        measurement_count_range: (u32, u32),
     ) -> OoniResult<SubmitRequest> {
         let probe_cc = probe_cc.to_str(py).expect("unable to get string");
         let probe_asn = probe_asn.to_str(py).expect("unable to get string");
@@ -240,8 +240,8 @@ impl UserState {
             &mut rng,
             probe_cc.into(),
             probe_asn.into(),
-            age_range[0]..age_range[1],
-            measurement_count_range[0]..measurement_count_range[1],
+            age_range.0..age_range.1,
+            measurement_count_range.0..measurement_count_range.1,
         )?;
 
         self.submit_client_state = Some(client_state);
@@ -365,8 +365,8 @@ mod tests {
                     py,
                     cc.clone().into(),
                     asn.clone().into(),
-                    [today - 30, today + 1],
-                    [0, 100],
+                    (today - 30, today + 1),
+                    (0, 100),
                 )
                 .unwrap();
 
@@ -462,8 +462,8 @@ mod tests {
                     py,
                     probe_cc.clone_ref(py),
                     probe_asn.clone_ref(py),
-                    [today - 30, today + 1],
-                    [0, 100],
+                    (today - 30, today + 1),
+                    (0, 100),
                 )
                 .expect("Unable to make submit request");
 
@@ -507,8 +507,8 @@ mod tests {
                     py,
                     probe_cc.clone_ref(py),
                     probe_asn.clone_ref(py),
-                    [today - 30, today + 1],
-                    [0, 100],
+                    (today - 30, today + 1),
+                    (0, 100),
                 )
                 .expect("Unable to make submit request");
 
