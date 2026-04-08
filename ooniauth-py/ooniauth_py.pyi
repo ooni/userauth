@@ -5,40 +5,55 @@ import builtins
 import typing
 
 __version__: builtins.str
+
 class CredentialError(builtins.Exception):
     r"""
     An authentication error
     """
+
     ...
 
 class DeserializationFailed(builtins.Exception):
     r"""
     An error trying to deserialize a base64-encoded payload
     """
+
     ...
 
 class ProtocolError(builtins.Exception):
     r"""
     An error performing the protocol
     """
+
     ...
 
 class ServerState:
     def __new__(cls) -> ServerState: ...
     @staticmethod
-    def from_creds(public_parameters:str, secret_key:str) -> ServerState:
+    def from_creds(public_parameters: str, secret_key: str) -> ServerState:
         r"""
         Create a new server state from base64-encoded keys
         This is meant to be used by the server, so it can store the keys somewhere and recreate the
         state when needed
         """
+
     def get_secret_key(self) -> str: ...
     def get_public_parameters(self) -> str: ...
-    def handle_registration_request(self, registration_request:str) -> str: ...
+    def handle_registration_request(self, registration_request: str) -> str: ...
     @staticmethod
     def today() -> builtins.int: ...
-    def handle_submit_request(self, nym:str, request:str, probe_cc:str, probe_asn:str, age_range:list, measurement_count_range:list) -> str: ...
-    def handle_update_request(self, req:str, old_public_params:str, old_secret_key:str) -> str: ...
+    def handle_submit_request(
+        self,
+        nym: str,
+        request: str,
+        probe_cc: str,
+        probe_asn: str,
+        age_range: list,
+        measurement_count_range: list,
+    ) -> str: ...
+    def handle_update_request(
+        self, req: str, old_public_params: str, old_secret_key: str
+    ) -> str: ...
 
 class SubmitRequest:
     @property
@@ -60,7 +75,11 @@ class UserState:
         """
 
     def make_submit_request(
-        self, probe_cc: str, probe_asn: str, emission_date: builtins.int
+        self,
+        probe_cc: str,
+        probe_asn: str,
+        age_range: tuple[builtins.int, builtins.int],
+        measurement_count_range: tuple[builtins.int, builtins.int],
     ) -> SubmitRequest: ...
     def handle_submit_response(self, response: str) -> None:
         r"""
