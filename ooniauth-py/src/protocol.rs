@@ -229,7 +229,8 @@ impl UserState {
         py: Python<'_>,
         probe_cc: Py<PyString>,
         probe_asn: Py<PyString>,
-        emission_date: u32,
+        age_range: (u32, u32),
+        measurement_count_range: (u32, u32),
     ) -> OoniResult<SubmitRequest> {
         let probe_cc = probe_cc.to_str(py).expect("unable to get string");
         let probe_asn = probe_asn.to_str(py).expect("unable to get string");
@@ -239,8 +240,8 @@ impl UserState {
             &mut rng,
             probe_cc.into(),
             probe_asn.into(),
-            (emission_date - 30)..(emission_date + 1),
-            0..100,
+            age_range.0..age_range.1,
+            measurement_count_range.0..measurement_count_range.1,
         )?;
 
         self.submit_client_state = Some(client_state);
@@ -357,12 +358,18 @@ mod tests {
             let cc = PyString::new(py, "VE");
             let asn = PyString::new(py, "AS1234");
             let today = ServerState::today();
-            let submit_req = client
-                .make_submit_request(py, cc.clone().into(), asn.clone().into(), today)
-                .unwrap();
-
             let age_range = PyList::new(py, vec![today - 30, today + 1]).unwrap();
             let msm_range = PyList::new(py, vec![0, 100]).unwrap();
+            let submit_req = client
+                .make_submit_request(
+                    py,
+                    cc.clone().into(),
+                    asn.clone().into(),
+                    (today - 30, today + 1),
+                    (0, 100),
+                )
+                .unwrap();
+
             assert!(server
                 .handle_submit_request(
                     py,
@@ -455,7 +462,8 @@ mod tests {
                     py,
                     probe_cc.clone_ref(py),
                     probe_asn.clone_ref(py),
-                    ServerState::today(),
+                    (today - 30, today + 1),
+                    (0, 100),
                 )
                 .expect("Unable to make submit request");
 
@@ -499,7 +507,8 @@ mod tests {
                     py,
                     probe_cc.clone_ref(py),
                     probe_asn.clone_ref(py),
-                    ServerState::today(),
+                    (today - 30, today + 1),
+                    (0, 100),
                 )
                 .expect("Unable to make submit request");
 

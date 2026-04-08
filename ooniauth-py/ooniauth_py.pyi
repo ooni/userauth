@@ -75,7 +75,11 @@ class UserState:
         """
 
     def make_submit_request(
-        self, probe_cc: str, probe_asn: str, emission_date: builtins.int
+        self,
+        probe_cc: str,
+        probe_asn: str,
+        age_range: tuple[builtins.int, builtins.int],
+        measurement_count_range: tuple[builtins.int, builtins.int],
     ) -> SubmitRequest: ...
     def handle_submit_response(self, response: str) -> None:
         r"""
