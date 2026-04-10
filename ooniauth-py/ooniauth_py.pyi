@@ -48,8 +48,8 @@ class ServerState:
         request: str,
         probe_cc: str,
         probe_asn: str,
-        age_range: list,
-        measurement_count_range: list,
+        age_range: tuple[builtins.int, builtins.int],
+        measurement_count_range: tuple[builtins.int, builtins.int],
     ) -> str: ...
     def handle_update_request(
         self, req: str, old_public_params: str, old_secret_key: str
