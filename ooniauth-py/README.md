@@ -4,32 +4,41 @@ This is the bindings library used to call the anonymous credentials library from
 
 We use this in our backend implement the anonymous credentials protocol in our API
 
-## Requirements
+## Installation
+
+You can install this library by running:
+
+```bash
+pip install ooniauth-py
+```
+
+## Development requirements
+
+These tools are required to contribute to this library
 
 1. [maturin](https://github.com/PyO3/maturin): Is used to build the library itself, it's heavily used to develop this library
 
-## Installation
 
 In order to use [maturin](https://github.com/PyO3/maturin), you need a virtual environment to manage
-the resulting Python package during development, see more details 
+the resulting Python package during development, see more details
 [here](https://www.maturin.rs/tutorial.html#install-and-configure-maturin-in-a-virtual-environment)
 
-### Testing Installation
+### Testing installation
 
-If you try to run the tests as you usually would with `cargo test`, you will get linking errors. This 
+If you try to run the tests as you usually would with `cargo test`, you will get linking errors. This
 happens because Maturin provides a build configuration with all the linking flags required to build
 the library. However, it does not provide a `maturing test` command that could help you with this.
 
-A possible solution is to manually specify the linking flags to the compiler, but in order to do this 
+A possible solution is to manually specify the linking flags to the compiler, but in order to do this
 you will probably need to download the specific Python version (3.10). A good way to do this
 is using [Pyenv](https://github.com/pyenv/pyenv):
 
 1. [Install Pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation)
 2. Install Python 3.10.0 with pyenv: `pyenv install 3.10.0`
 
-With the Python version installed, you can create a `.cargo/config.toml` 
-with the linking flags. Create the file in `userauth/.cargo/config.toml` 
-and fill the following template: 
+With the Python version installed, you can create a `.cargo/config.toml`
+with the linking flags. Create the file in `userauth/.cargo/config.toml`
+and fill the following template:
 
 ```toml
 [target.'cfg(all())']
@@ -40,7 +49,7 @@ rustflags = [
 ]
 ```
 
-Example result: 
+Example result:
 ```toml
 [target.'cfg(all())']
 rustflags = [
@@ -52,7 +61,7 @@ rustflags = [
 
 **Note**: Make sure to create this file in `userauth/.cargo/config.toml` and not in `userauth/ooniauth-py/.cargo.toml`
 
-## Usage
+### Usage
 
 1. Create a ready-to-use `.whl` to import in python: `make wheels`
   - **Note**: You will find the wheels file in: `/userauth/ooniauth-py/wheels`

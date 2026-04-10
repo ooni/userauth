@@ -16,6 +16,9 @@ pub mod registration;
 pub mod submit;
 pub mod update;
 
+/// Version of this crate (`ooniauth-core`), from `Cargo.toml`.
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ServerState {
     /// The private key for the main User Auth credential

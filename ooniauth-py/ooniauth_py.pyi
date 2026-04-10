@@ -4,6 +4,8 @@
 import builtins
 import typing
 
+__version__: builtins.str
+
 class CredentialError(builtins.Exception):
     r"""
     An authentication error
@@ -34,6 +36,7 @@ class ServerState:
         This is meant to be used by the server, so it can store the keys somewhere and recreate the
         state when needed
         """
+
     def get_secret_key(self) -> str: ...
     def get_public_parameters(self) -> str: ...
     def handle_registration_request(self, registration_request: str) -> str: ...
@@ -70,6 +73,7 @@ class UserState:
         Note that this function will only work if you previously called
         `make_registration_request`
         """
+
     def make_submit_request(
         self, probe_cc: str, probe_asn: str, emission_date: builtins.int
     ) -> SubmitRequest: ...
@@ -80,13 +84,20 @@ class UserState:
         Note that this function will only work if you previously called
         `make_submit_request`
         """
+
     def make_credential_update_request(self) -> str:
         r"""
         Creates a credential update request to be sent to the server.
         """
+
     def handle_credential_update_response(self, resp: str) -> None:
         r"""
         Handles the credential update response sent by the server, updating your credentials.
 
         This function only works if you previosly called `make_credential_update_request`
         """
+
+def get_protocol_version() -> builtins.str:
+    r"""
+    Returns the version of the `ooniauth-core`, the actual protocol implementation.
+    """
