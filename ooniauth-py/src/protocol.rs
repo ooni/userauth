@@ -6,7 +6,7 @@ use ooniauth_core::{self as ooni, PublicParameters, SecretKey};
 
 use pyo3::{
     prelude::*,
-    types::{PyList, PyString},
+    types::PyString,
 };
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pyfunction, gen_stub_pymethods};
 
@@ -23,28 +23,6 @@ fn py_string_arg<'py>(
         .map_err(|e| OoniErr::DeserializationFailed {
             reason: format!("invalid {name}: {e}"),
         })
-}
-
-fn py_u32_range(
-    py: Python<'_>,
-    value: &Py<PyList>,
-    name: &str,
-) -> OoniResult<std::ops::Range<u32>> {
-    let range = value
-        .extract::<Vec<u32>>(py)
-        .map_err(|e| OoniErr::DeserializationFailed {
-            reason: format!("invalid {name}: {e}"),
-        })?;
-    let [start, end]: [u32; 2] =
-        range
-            .try_into()
-            .map_err(|range: Vec<u32>| OoniErr::DeserializationFailed {
-                reason: format!(
-                    "{name} must contain exactly 2 integers, got {}",
-                    range.len()
-                ),
-            })?;
-    Ok(start..end)
 }
 
 /// Returns the version of the `ooniauth-core`, the actual protocol implementation.
@@ -121,8 +99,8 @@ impl ServerState {
         request: Py<PyString>,
         probe_cc: Py<PyString>,
         probe_asn: Py<PyString>,
-        age_range: Py<PyList>,
-        measurement_count_range: Py<PyList>,
+        age_range: (u32, u32),
+        measurement_count_range: (u32, u32),
     ) -> OoniResult<Py<PyString>> {
         // Convert arguments from py types to rust types
         let nym: [u8; 32] = BASE64_STANDARD
@@ -138,9 +116,6 @@ impl ServerState {
         let request = from_pystring::<ooniauth_core::submit::SubmitRequest>(py, &request)?;
         let probe_cc = py_string_arg(py, &probe_cc, "probe_cc")?;
         let probe_asn = py_string_arg(py, &probe_asn, "probe_asn")?;
-        let age_range = py_u32_range(py, &age_range, "age_range")?;
-        let measurement_count_range =
-            py_u32_range(py, &measurement_count_range, "measurement_count_range")?;
 
         // Handle submission
         let mut rng = rand::thread_rng();
@@ -150,8 +125,8 @@ impl ServerState {
             &nym,
             probe_cc,
             probe_asn,
-            age_range,
-            measurement_count_range,
+            age_range.0..age_range.1,
+            measurement_count_range.0..measurement_count_range.1,
         )?;
 
         Ok(to_pystring(py, &result))
@@ -343,10 +318,7 @@ mod tests {
     use crate::OoniErr;
     use base64::{prelude::BASE64_STANDARD, Engine};
     use ooniauth_core::{registration::open_registration::Request, ServerState, UserState};
-    use pyo3::{
-        types::{PyList, PyString},
-        Py, Python,
-    };
+    use pyo3::{types::PyString, Py, Python};
     use rand::{rngs::ThreadRng, thread_rng};
 
     #[test]
@@ -385,15 +357,15 @@ mod tests {
             let cc = PyString::new(py, "VE");
             let asn = PyString::new(py, "AS1234");
             let today = ServerState::today();
-            let age_range = PyList::new(py, vec![today - 30, today + 1]).unwrap();
-            let msm_range = PyList::new(py, vec![0, 100]).unwrap();
+            let age_tuple = (today - 30, today + 1);
+            let msm_tuple = (0u32, 100u32);
             let submit_req = client
                 .make_submit_request(
                     py,
                     cc.clone().into(),
                     asn.clone().into(),
-                    (today - 30, today + 1),
-                    (0, 100),
+                    age_tuple,
+                    msm_tuple,
                 )
                 .unwrap();
 
@@ -404,8 +376,8 @@ mod tests {
                     submit_req.request,
                     cc.into(),
                     asn.into(),
-                    age_range.into(),
-                    msm_range.into()
+                    age_tuple,
+                    msm_tuple,
                 )
                 .is_ok());
         });
@@ -480,17 +452,16 @@ mod tests {
             let probe_cc: Py<PyString> = PyString::new(py, "VE").into();
             let probe_asn: Py<PyString> = PyString::new(py, "AS8048").into();
             let today = ServerState::today();
-            let age_range: Py<PyList> =
-                PyList::new(py, vec![today - 30, today + 1]).unwrap().into();
-            let count_range: Py<PyList> = PyList::new(py, vec![0, 100]).unwrap().into();
+            let age_tuple = (today - 30, today + 1);
+            let count_tuple = (0u32, 100u32);
 
             let submit = client
                 .make_submit_request(
                     py,
                     probe_cc.clone_ref(py),
                     probe_asn.clone_ref(py),
-                    (today - 30, today + 1),
-                    (0, 100),
+                    age_tuple,
+                    count_tuple,
                 )
                 .expect("Unable to make submit request");
 
@@ -501,8 +472,8 @@ mod tests {
                     submit.request,
                     probe_cc.clone_ref(py),
                     probe_asn.clone_ref(py),
-                    age_range.clone_ref(py),
-                    count_range.clone_ref(py),
+                    age_tuple,
+                    count_tuple,
                 )
                 .expect("Invalid submit request");
 
@@ -534,8 +505,8 @@ mod tests {
                     py,
                     probe_cc.clone_ref(py),
                     probe_asn.clone_ref(py),
-                    (today - 30, today + 1),
-                    (0, 100),
+                    age_tuple,
+                    count_tuple,
                 )
                 .expect("Unable to make submit request");
 
@@ -546,8 +517,8 @@ mod tests {
                     submit.request,
                     probe_cc,
                     probe_asn,
-                    age_range,
-                    count_range,
+                    age_tuple,
+                    count_tuple,
                 )
                 .expect("Invalid submit request");
 
@@ -564,8 +535,8 @@ mod tests {
         crate::SubmitRequest,
         Py<PyString>,
         Py<PyString>,
-        Py<PyList>,
-        Py<PyList>,
+        (u32, u32),
+        (u32, u32),
     ) {
         let server = crate::ServerState::new();
         let mut client = crate::UserState::new(py, server.get_public_parameters(py)).unwrap();
@@ -575,18 +546,18 @@ mod tests {
         let cc: Py<PyString> = PyString::new(py, "VE").into();
         let asn: Py<PyString> = PyString::new(py, "AS1234").into();
         let today = crate::ServerState::today();
+        let age_tuple = (today - 30, today + 1);
+        let count_tuple = (0u32, 100u32);
         let submit = client
             .make_submit_request(
                 py,
                 cc.clone_ref(py),
                 asn.clone_ref(py),
-                (today - 30, today + 1),
-                (0, 100),
+                age_tuple,
+                count_tuple,
             )
             .unwrap();
-        let age_range: Py<PyList> = PyList::new(py, vec![today - 30, today + 1]).unwrap().into();
-        let count_range: Py<PyList> = PyList::new(py, vec![0, 100]).unwrap().into();
-        (server, submit, cc, asn, age_range, count_range)
+        (server, submit, cc, asn, age_tuple, count_tuple)
     }
 
     #[test]
@@ -597,29 +568,6 @@ mod tests {
             let bad_nym = PyString::new(py, &BASE64_STANDARD.encode([7u8; 31])).into();
             let err = server
                 .handle_submit_request(py, bad_nym, submit.request, cc, asn, age_range, count_range)
-                .unwrap_err();
-            assert!(matches!(err, OoniErr::DeserializationFailed { .. }));
-        });
-    }
-
-    #[test]
-    fn test_handle_submit_request_rejects_short_age_range() {
-        pyo3::Python::initialize();
-        Python::attach(|py| {
-            let (server, submit, cc, asn, _age_range, count_range) = submit_fixture(py);
-            let short_range = PyList::new(py, vec![crate::ServerState::today()])
-                .unwrap()
-                .into();
-            let err = server
-                .handle_submit_request(
-                    py,
-                    submit.nym,
-                    submit.request,
-                    cc,
-                    asn,
-                    short_range,
-                    count_range,
-                )
                 .unwrap_err();
             assert!(matches!(err, OoniErr::DeserializationFailed { .. }));
         });
