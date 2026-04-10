@@ -349,15 +349,6 @@ mod tests {
     };
     use rand::{rngs::ThreadRng, thread_rng};
 
-    fn registered_client(py: Python<'_>) -> crate::UserState {
-        let server = crate::ServerState::new();
-        let mut client = crate::UserState::new(py, server.get_public_parameters(py)).unwrap();
-        let req = client.make_registration_request(py).unwrap();
-        let resp = server.handle_registration_request(py, req).unwrap();
-        client.handle_registration_response(py, resp).unwrap();
-        client
-    }
-
     #[test]
     fn test_encoding_verifies() {
         // Check that the string encoding still let us verify
@@ -417,24 +408,6 @@ mod tests {
                     msm_range.into()
                 )
                 .is_ok());
-        });
-    }
-
-    #[test]
-    fn test_make_submit_request_rejects_date_overflow() {
-        pyo3::Python::initialize();
-        Python::attach(|py| {
-            let mut client = registered_client(py);
-            let cc: Py<PyString> = PyString::new(py, "VE").into();
-            let asn: Py<PyString> = PyString::new(py, "AS1234").into();
-            assert!(matches!(
-                client.make_submit_request(py, cc.clone_ref(py), asn.clone_ref(py), 0),
-                Err(crate::OoniErr::SubmitDateOutOfRange { .. })
-            ));
-            assert!(matches!(
-                client.make_submit_request(py, cc, asn, u32::MAX),
-                Err(crate::OoniErr::SubmitDateOutOfRange { .. })
-            ));
         });
     }
 
@@ -603,7 +576,13 @@ mod tests {
         let asn: Py<PyString> = PyString::new(py, "AS1234").into();
         let today = crate::ServerState::today();
         let submit = client
-            .make_submit_request(py, cc.clone_ref(py), asn.clone_ref(py), today)
+            .make_submit_request(
+                py,
+                cc.clone_ref(py),
+                asn.clone_ref(py),
+                (today - 30, today + 1),
+                (0, 100),
+            )
             .unwrap();
         let age_range: Py<PyList> = PyList::new(py, vec![today - 30, today + 1]).unwrap().into();
         let count_range: Py<PyList> = PyList::new(py, vec![0, 100]).unwrap().into();
