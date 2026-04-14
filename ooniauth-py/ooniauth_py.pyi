@@ -49,7 +49,7 @@ class ServerState:
         probe_cc: str,
         probe_asn: str,
         age_range: tuple[builtins.int, builtins.int],
-        measurement_count_range: tuple[builtins.int, builtins.int],
+        min_measurement_count: builtins.int,
     ) -> str: ...
     def handle_update_request(
         self, req: str, old_public_params: str, old_secret_key: str
@@ -79,7 +79,7 @@ class UserState:
         probe_cc: str,
         probe_asn: str,
         age_range: tuple[builtins.int, builtins.int],
-        measurement_count_range: tuple[builtins.int, builtins.int],
+        min_measurement_count: builtins.int,
     ) -> SubmitRequest: ...
     def handle_submit_response(self, response: str) -> None:
         r"""

@@ -100,7 +100,7 @@ impl ServerState {
         probe_cc: Py<PyString>,
         probe_asn: Py<PyString>,
         age_range: (u32, u32),
-        measurement_count_range: (u32, u32),
+        min_measurement_count: u32,
     ) -> OoniResult<Py<PyString>> {
         // Convert arguments from py types to rust types
         let nym: [u8; 32] = BASE64_STANDARD
@@ -126,7 +126,7 @@ impl ServerState {
             probe_cc,
             probe_asn,
             age_range.0..age_range.1,
-            measurement_count_range.0..measurement_count_range.1,
+            min_measurement_count..u32::MAX,
         )?;
 
         Ok(to_pystring(py, &result))
@@ -231,7 +231,7 @@ impl UserState {
         probe_cc: Py<PyString>,
         probe_asn: Py<PyString>,
         age_range: (u32, u32),
-        measurement_count_range: (u32, u32),
+        min_measurement_count: u32,
     ) -> OoniResult<SubmitRequest> {
         let probe_cc = probe_cc.to_str(py).expect("unable to get string");
         let probe_asn = probe_asn.to_str(py).expect("unable to get string");
@@ -242,7 +242,7 @@ impl UserState {
             probe_cc.into(),
             probe_asn.into(),
             age_range.0..age_range.1,
-            measurement_count_range.0..measurement_count_range.1,
+            min_measurement_count..u32::MAX,
         )?;
 
         self.submit_client_state = Some(client_state);
@@ -358,14 +358,14 @@ mod tests {
             let asn = PyString::new(py, "AS1234");
             let today = ServerState::today();
             let age_tuple = (today - 30, today + 1);
-            let msm_tuple = (0u32, 100u32);
+            let min_msm = 0u32;
             let submit_req = client
                 .make_submit_request(
                     py,
                     cc.clone().into(),
                     asn.clone().into(),
                     age_tuple,
-                    msm_tuple,
+                    min_msm,
                 )
                 .unwrap();
 
@@ -377,7 +377,7 @@ mod tests {
                     cc.into(),
                     asn.into(),
                     age_tuple,
-                    msm_tuple,
+                    min_msm,
                 )
                 .is_ok());
         });
@@ -453,7 +453,7 @@ mod tests {
             let probe_asn: Py<PyString> = PyString::new(py, "AS8048").into();
             let today = ServerState::today();
             let age_tuple = (today - 30, today + 1);
-            let count_tuple = (0u32, 100u32);
+            let min_msm = 0u32;
 
             let submit = client
                 .make_submit_request(
@@ -461,7 +461,7 @@ mod tests {
                     probe_cc.clone_ref(py),
                     probe_asn.clone_ref(py),
                     age_tuple,
-                    count_tuple,
+                    min_msm,
                 )
                 .expect("Unable to make submit request");
 
@@ -473,7 +473,7 @@ mod tests {
                     probe_cc.clone_ref(py),
                     probe_asn.clone_ref(py),
                     age_tuple,
-                    count_tuple,
+                    min_msm,
                 )
                 .expect("Invalid submit request");
 
@@ -506,7 +506,7 @@ mod tests {
                     probe_cc.clone_ref(py),
                     probe_asn.clone_ref(py),
                     age_tuple,
-                    count_tuple,
+                    min_msm,
                 )
                 .expect("Unable to make submit request");
 
@@ -518,7 +518,7 @@ mod tests {
                     probe_cc,
                     probe_asn,
                     age_tuple,
-                    count_tuple,
+                    min_msm,
                 )
                 .expect("Invalid submit request");
 
@@ -536,7 +536,7 @@ mod tests {
         Py<PyString>,
         Py<PyString>,
         (u32, u32),
-        (u32, u32),
+        u32,
     ) {
         let server = crate::ServerState::new();
         let mut client = crate::UserState::new(py, server.get_public_parameters(py)).unwrap();
@@ -547,27 +547,27 @@ mod tests {
         let asn: Py<PyString> = PyString::new(py, "AS1234").into();
         let today = crate::ServerState::today();
         let age_tuple = (today - 30, today + 1);
-        let count_tuple = (0u32, 100u32);
+        let min_msm = 0u32;
         let submit = client
             .make_submit_request(
                 py,
                 cc.clone_ref(py),
                 asn.clone_ref(py),
                 age_tuple,
-                count_tuple,
+                min_msm,
             )
             .unwrap();
-        (server, submit, cc, asn, age_tuple, count_tuple)
+        (server, submit, cc, asn, age_tuple, min_msm)
     }
 
     #[test]
     fn test_handle_submit_request_rejects_short_nym() {
         pyo3::Python::initialize();
         Python::attach(|py| {
-            let (server, submit, cc, asn, age_range, count_range) = submit_fixture(py);
+            let (server, submit, cc, asn, age_range, min_msm) = submit_fixture(py);
             let bad_nym = PyString::new(py, &BASE64_STANDARD.encode([7u8; 31])).into();
             let err = server
-                .handle_submit_request(py, bad_nym, submit.request, cc, asn, age_range, count_range)
+                .handle_submit_request(py, bad_nym, submit.request, cc, asn, age_range, min_msm)
                 .unwrap_err();
             assert!(matches!(err, OoniErr::DeserializationFailed { .. }));
         });
