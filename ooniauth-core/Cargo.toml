@@ -31,6 +31,10 @@ tracing-forest = "0.1"
 name = "basic_usage"
 test = true
 
+[[example]]
+name = "client_benchmark_table"
+test = true
+
 [[bench]]
 name = "bench_server"
 harness = false

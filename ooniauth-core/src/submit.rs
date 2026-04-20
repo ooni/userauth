@@ -53,14 +53,7 @@ fn digest_point(point: RistrettoPoint) -> [u8; 32] {
 }
 
 impl UserState {
-    #[instrument(skip(
-        self,
-        rng,
-        probe_cc,
-        probe_asn,
-        age_range,
-        measurement_count_range
-    ))]
+    #[instrument(skip(self, rng, probe_cc, probe_asn, age_range, measurement_count_range))]
     pub fn submit_request(
         &self,
         rng: &mut (impl RngCore + CryptoRng),

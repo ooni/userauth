@@ -1,6 +1,6 @@
 # iOS app
 
-This folder contains a SwiftUI app that calls the Rust demo flow through a C ABI FFI.
+This folder contains a SwiftUI app that calls the Rust client benchmark flow through a C ABI FFI.
 
 ## Build the FFI framework
 
@@ -17,4 +17,4 @@ This writes `ios/OoniAuthBindings/OoniAuthFFI.xcframework`.
 ## Run the app
 
 Open `ios/OoniAuthApp.xcodeproj` in Xcode and run the `OoniAuthApp` target.
-The app has a single "Run Demo" button that executes the Rust `basic_usage` flow via FFI.
+The app has a single button that executes the Rust `ooniauth_run_client_benchmarks` flow via FFI. The results display the mean and standard deviation in milli-seconds for each client protocol.

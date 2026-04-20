@@ -11,6 +11,7 @@ use registration::UserAuthCredential;
 use serde::{Deserialize, Serialize};
 use sha2::Sha512;
 use subtle::ConstantTimeEq;
+pub mod benchmark;
 pub mod errors;
 pub mod registration;
 pub mod submit;

@@ -6,20 +6,20 @@ struct ContentView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("OONI Auth Demo")
+            Text("OONI Auth Benchmarks")
                 .font(.title2)
                 .fontWeight(.semibold)
 
-            Text("Runs the basic_usage flow from Rust and prints the result below.")
+            Text("Runs the client benchmark flow from Rust and prints the compact table below.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            Button(action: runDemo) {
+            Button(action: runBenchmarks) {
                 HStack {
                     if isRunning {
                         ProgressView()
                     }
-                    Text(isRunning ? "Running..." : "Run Demo")
+                    Text(isRunning ? "Running..." : "Run Benchmarks")
                 }
             }
             .disabled(isRunning)
@@ -37,12 +37,12 @@ struct ContentView: View {
         .padding()
     }
 
-    private func runDemo() {
+    private func runBenchmarks() {
         isRunning = true
         log = "Running..."
 
         DispatchQueue.global(qos: .userInitiated).async {
-            let output = OoniAuthFFI.runBasicUsage()
+            let output = OoniAuthFFI.runClientBenchmarks()
             DispatchQueue.main.async {
                 log = output
                 isRunning = false

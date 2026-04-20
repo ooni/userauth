@@ -297,6 +297,10 @@ fn run_basic_usage_demo() -> Result<String, String> {
     Ok(log)
 }
 
+fn run_benchmark_table() -> Result<String, String> {
+    ooniauth_core::benchmark::run_benchmark_table()
+}
+
 #[no_mangle]
 pub extern "C" fn ooniauth_run_basic_usage() -> *mut c_char {
     let output = match run_basic_usage_demo() {
@@ -309,9 +313,22 @@ pub extern "C" fn ooniauth_run_basic_usage() -> *mut c_char {
         .into_raw()
 }
 
+#[no_mangle]
+pub extern "C" fn ooniauth_run_client_benchmarks() -> *mut c_char {
+    let output = match run_benchmark_table() {
+        Ok(table) => table,
+        Err(err) => format!("error: {err}"),
+    };
+
+    CString::new(output)
+        .unwrap_or_else(|_| CString::new("error: output contained nul byte").unwrap())
+        .into_raw()
+}
+
 /// # Safety
-/// Caller must pass the pointer returned by `ooniauth_run_basic_usage`.
-/// The pointer must be valid, non-null, and freed exactly once.
+/// Caller must pass the pointer returned by one of the `ooniauth_run_*`
+/// functions in this file. The pointer must be valid, non-null, and freed
+/// exactly once.
 #[no_mangle]
 pub unsafe extern "C" fn ooniauth_string_free(ptr: *mut c_char) {
     if ptr.is_null() {
