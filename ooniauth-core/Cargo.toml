@@ -32,7 +32,7 @@ name = "basic_usage"
 test = true
 
 [[example]]
-name = "client_benchmark_table"
+name = "benchmark_table"
 test = true
 
 [[bench]]
