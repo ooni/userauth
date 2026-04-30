@@ -4,6 +4,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TAG_PREFIX="userauth"
+YELLOW=$'\033[33m'
+RESET=$'\033[0m'
 
 if ! command -v git >/dev/null 2>&1; then
   echo "Error: git is required but was not found in PATH" >&2
@@ -37,7 +39,7 @@ fi
 echo "Release tag preview:"
 echo "  Tag scheme:     ${TAG_PREFIX}-<shortsha>-<release_number>"
 echo "  Release number: $NEXT_RELEASE_NUM"
-echo "  Tag:            $TAG_NAME"
+echo "  Tag:            ${YELLOW}${TAG_NAME}${RESET}"
 echo "  Branch:         $CURRENT_BRANCH"
 echo "  Commit:         $COMMIT_SHA"
 echo
