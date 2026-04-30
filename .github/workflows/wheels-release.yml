@@ -53,12 +53,47 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-wheels
     steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
       - name: Download wheel artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: wheels-*
           path: dist
           merge-multiple: true
+
+      # pulls the current version from pypi and compares with the current version on ooniauth-py
+      - name: Verify version is greater than PyPI
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          LOCAL_VERSION="$(awk -F '"' '/^version = "/ { print $2; exit }' ooniauth-py/Cargo.toml)"
+          PYPI_VERSION="$(python3 - <<'PY'
+          import json
+          import urllib.request
+
+          url = "https://pypi.org/pypi/ooniauth-py/json"
+          with urllib.request.urlopen(url, timeout=20) as response:
+              data = json.load(response)
+          print(data["info"]["version"])
+          PY
+          )"
+
+          if [[ -z "$LOCAL_VERSION" || -z "$PYPI_VERSION" ]]; then
+            echo "Failed to parse local or PyPI version." >&2
+            exit 1
+          fi
+
+          echo "Local version: $LOCAL_VERSION"
+          echo "PyPI version:  $PYPI_VERSION"
+
+          HIGHEST="$(printf '%s\n%s\n' "$PYPI_VERSION" "$LOCAL_VERSION" | sort -V | tail -n 1)"
+          if [[ "$LOCAL_VERSION" == "$PYPI_VERSION" || "$HIGHEST" != "$LOCAL_VERSION" ]]; then
+            echo "Local version must be greater than PyPI version." >&2
+            exit 1
+          fi
 
       - name: Check staged wheels
         run: |
