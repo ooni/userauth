@@ -3,7 +3,7 @@ name: Build Wheels and Release
 on:
   push:
     tags:
-      - "*"
+      - "userauth-*"
   workflow_dispatch: {}
 
 permissions:

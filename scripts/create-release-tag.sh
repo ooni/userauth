@@ -4,7 +4,9 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TAG_PREFIX="userauth"
+CYAN=$'\033[36m'
 YELLOW=$'\033[33m'
+RED=$'\033[31m'
 RESET=$'\033[0m'
 
 if ! command -v git >/dev/null 2>&1; then
@@ -16,9 +18,10 @@ CURRENT_BRANCH="$(git -C "$ROOT_DIR" rev-parse --abbrev-ref HEAD)"
 COMMIT_SHA="$(git -C "$ROOT_DIR" rev-parse --short HEAD)"
 MAX_RELEASE_NUM="$(
   git -C "$ROOT_DIR" tag --list "${TAG_PREFIX}-*" \
-    | awk -F '-' '
-      $1 "-" $2 == "ooniauth-py" && $NF ~ /^[0-9]+$/ {
-        if ($NF > max) max = $NF
+    | awk -v prefix="${TAG_PREFIX}-" '
+      index($0, prefix) == 1 && match($0, /-([0-9]+)$/, m) {
+        release_num = m[1] + 0
+        if (release_num > max) max = release_num
       }
       END { print max + 0 }
     '
@@ -39,11 +42,19 @@ fi
 echo "Release tag preview:"
 echo "  Tag scheme:     ${TAG_PREFIX}-<shortsha>-<release_number>"
 echo "  Release number: $NEXT_RELEASE_NUM"
-echo "  Tag:            ${YELLOW}${TAG_NAME}${RESET}"
-echo "  Branch:         $CURRENT_BRANCH"
+echo "  Tag:            ${CYAN}${TAG_NAME}${RESET}"
+if [[ "$CURRENT_BRANCH" == "main" ]]; then
+  echo "  Branch:         $CURRENT_BRANCH"
+else
+  echo "  Branch:         ${RED}${CURRENT_BRANCH} (WARNING: not main)${RESET}"
+fi
 echo "  Commit:         $COMMIT_SHA"
 echo
-read -r -p "Create and push tag $TAG_NAME to origin? [y/N] " answer
+if [[ "$CURRENT_BRANCH" != "main" ]]; then
+  printf "%b\n" "  ${YELLOW}WARNING: current branch is '$CURRENT_BRANCH' (not main): commit $COMMIT_SHA may not be on main${RESET}"
+fi
+
+read -r -p "Create and push tag ${CYAN} $TAG_NAME ${RESET} to origin? [y/N] " answer
 
 case "$answer" in
   y|Y|yes|YES)
