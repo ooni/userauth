@@ -39,6 +39,37 @@ if git -C "$ROOT_DIR" ls-remote --tags origin "refs/tags/$TAG_NAME" | grep -q "$
   exit 1
 fi
 
+CARGO_TOML="$ROOT_DIR/ooniauth-py/Cargo.toml"
+if [[ ! -f "$CARGO_TOML" ]]; then
+  echo "Error: expected $CARGO_TOML" >&2
+  exit 1
+fi
+
+LOCAL_VERSION="$(awk -F '"' '/^version = "/ { print $2; exit }' "$CARGO_TOML")"
+PYPI_VERSION="$(python3 - <<'PY'
+import json
+import urllib.request
+
+url = "https://pypi.org/pypi/ooniauth-py/json"
+with urllib.request.urlopen(url, timeout=20) as response:
+    data = json.load(response)
+print(data["info"]["version"])
+PY
+)"
+
+if [[ -z "$LOCAL_VERSION" || -z "$PYPI_VERSION" ]]; then
+  echo "Failed to parse local or PyPI version." >&2
+  exit 1
+fi
+
+HIGHEST="$(printf '%s\n%s\n' "$PYPI_VERSION" "$LOCAL_VERSION" | sort -V | tail -n 1)"
+if [[ "$LOCAL_VERSION" == "$PYPI_VERSION" || "$HIGHEST" != "$LOCAL_VERSION" ]]; then
+  echo "Local ooniauth-py version must be greater than PyPI (bump ooniauth-py/Cargo.toml before releasing)." >&2
+  echo "  Local: $LOCAL_VERSION" >&2
+  echo "  PyPI:  $PYPI_VERSION" >&2
+  exit 1
+fi
+
 echo "Release tag preview:"
 echo "  Tag scheme:     ${TAG_PREFIX}-<shortsha>-<release_number>"
 echo "  Release number: $NEXT_RELEASE_NUM"
@@ -49,9 +80,10 @@ else
   echo "  Branch:         ${RED}${CURRENT_BRANCH} (WARNING: not main)${RESET}"
 fi
 echo "  Commit:         $COMMIT_SHA"
+echo "  ooniauth-py:    $LOCAL_VERSION (PyPI: $PYPI_VERSION)"
 echo
 if [[ "$CURRENT_BRANCH" != "main" ]]; then
-  printf "%b\n" "  ${YELLOW}WARNING: current branch is '$CURRENT_BRANCH' (not main): commit $COMMIT_SHA may not be on main${RESET}"
+  printf "%b\n" "  ${YELLOW}WARNING: current branch is '$CURRENT_BRANCH' (not main): commit $COMMIT_SHA is not in main${RESET}"
 fi
 
 read -r -p "Create and push tag ${CYAN} $TAG_NAME ${RESET} to origin? [y/N] " answer
