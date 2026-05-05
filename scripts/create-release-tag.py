@@ -156,7 +156,11 @@ def main() -> None:
         )
 
     prompt = f"Create and push tag {CYAN} {tag_name} {RESET} to origin? [y/N] "
-    answer = input(prompt).strip().lower()
+    try:
+        answer = input(prompt).strip().lower()
+    except KeyboardInterrupt as _:
+        answer = 'n'
+        print("\n")
     if answer not in ("y", "yes"):
         print("Aborted.")
         return
