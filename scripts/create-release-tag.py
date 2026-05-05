@@ -76,10 +76,12 @@ def tag_exists_remote(tag: str) -> bool:
     )
     return bool(out.stdout.strip())
 
+def vstr(v_tuple: tuple[int,...]) -> str:
+    return ".".join(map(str, v_tuple))
 
 def main() -> None:
-    current_branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout
-    commit_sha = git("rev-parse", "--short", "HEAD").stdout
+    current_branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+    commit_sha = git("rev-parse", "--short", "HEAD").stdout.strip()
 
     tags_out = git("tag", "--list", f"{TAG_PREFIX}-*").stdout
     tags = [ln for ln in tags_out.splitlines() if ln.strip()]
@@ -87,7 +89,10 @@ def main() -> None:
     next_n = max_n + 1
     tag_name = f"{TAG_PREFIX}-{commit_sha}-{next_n}"
 
-    if git("rev-parse", tag_name, check = False).returncode != 0:
+    # returns err if tag is unknown, which is what we want
+
+    tag_exists = git("rev-parse", tag_name, check = False).returncode == 0
+    if tag_exists:
         # tag_name can contain \n so we use `!r` at the end to print the
         # sequence instead of a line jump
         eprint(f"Error: tag {tag_name!r} already exists locally.")
@@ -138,7 +143,7 @@ def main() -> None:
     else:
         print(f"  Branch:         {RED}{current_branch} (WARNING: not main){RESET}")
     print(f"  Commit:         {commit_sha}")
-    print(f"  ooniauth-py:    {local_version} (PyPI: {pypi_version})")
+    print(f"  ooniauth-py:    {vstr(local_version)} (PyPI: {vstr(pypi_version)})")
     print()
     if current_branch != "main":
         print(
