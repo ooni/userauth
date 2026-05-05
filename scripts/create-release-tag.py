@@ -132,8 +132,8 @@ def main() -> None:
             f"{RED}ERROR{RESET}: Local ooniauth-py version must be greater than PyPI, "
             "bump ooniauth-py/Cargo.toml before releasing.",
         )
-        eprint(f"  Local: {local_version}")
-        eprint(f"  PyPI:  {pypi_version}")
+        eprint(f"  Local: {vstr(local_version)}")
+        eprint(f"  PyPI:  {vstr(pypi_version)}")
         sys.exit(1)
 
     print("Version number OK!")
