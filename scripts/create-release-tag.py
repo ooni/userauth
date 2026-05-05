@@ -34,7 +34,7 @@ def git(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
 
 def version_tuple(v: str) -> tuple[int, ...]:
     """Numeric dotted version -> tuple for lexicographic compare"""
-    parts = v.strip().split(".")
+    parts = v.strip().strip("v").split(".")
     if not parts or any(not p.isdigit() for p in parts):
         raise ValueError(f"expected dotted numeric version, got {v}")
     return tuple(int(p) for p in parts)
@@ -88,11 +88,13 @@ def main() -> None:
     tag_name = f"{TAG_PREFIX}-{commit_sha}-{next_n}"
 
     if git("rev-parse", tag_name, check = False).returncode != 0:
-        eprint(f"Error: tag {tag_name} already exists locally.")
+        # tag_name can contain \n so we use `!r` at the end to print the
+        # sequence instead of a line jump
+        eprint(f"Error: tag {tag_name!r} already exists locally.")
         sys.exit(1)
 
     if tag_exists_remote(tag_name):
-        eprint(f"Error: tag {tag_name} already exists on origin.")
+        eprint(f"Error: tag {tag_name!r} already exists on origin.")
         sys.exit(1)
 
     cargo_toml = REPO_ROOT / "ooniauth-py" / "Cargo.toml"
