@@ -21,8 +21,10 @@ RESET = "\033[0m"
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
+
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
+
 
 def git(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
@@ -31,6 +33,7 @@ def git(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
         capture_output=True,
         text=True,
     )
+
 
 def version_tuple(v: str) -> tuple[int, ...]:
     """Numeric dotted version -> tuple for lexicographic compare"""
@@ -76,8 +79,10 @@ def tag_exists_remote(tag: str) -> bool:
     )
     return bool(out.stdout.strip())
 
-def vstr(v_tuple: tuple[int,...]) -> str:
+
+def vstr(v_tuple: tuple[int, ...]) -> str:
     return ".".join(map(str, v_tuple))
+
 
 def main() -> None:
     current_branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
@@ -90,8 +95,7 @@ def main() -> None:
     tag_name = f"{TAG_PREFIX}-{commit_sha}-{next_n}"
 
     # returns err if tag is unknown, which is what we want
-
-    tag_exists = git("rev-parse", tag_name, check = False).returncode == 0
+    tag_exists = git("rev-parse", tag_name, check=False).returncode == 0
     if tag_exists:
         # tag_name can contain \n so we use `!r` at the end to print the
         # sequence instead of a line jump
@@ -151,9 +155,7 @@ def main() -> None:
             f"commit {commit_sha} is not in main{RESET}"
         )
 
-    prompt = (
-        f"Create and push tag {CYAN} {tag_name} {RESET} to origin? [y/N] "
-    )
+    prompt = f"Create and push tag {CYAN} {tag_name} {RESET} to origin? [y/N] "
     answer = input(prompt).strip().lower()
     if answer not in ("y", "yes"):
         print("Aborted.")
