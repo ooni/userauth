@@ -4,3 +4,4 @@ ios/**/.DS_Store
 ios/**/*.xcuserstate
 ios/**/xcuserdata/
 ios/OoniAuthBindings/OoniAuthFFI.xcframework/
+ooniauth-py/wheels/

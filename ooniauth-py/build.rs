@@ -10,10 +10,4 @@ fn main() {
     println!("cargo:rerun-if-env-changed=CFLAGS");
     println!("cargo:rerun-if-env-changed=LDFLAGS");
     println!("cargo:rerun-if-env-changed=RUSTFLAGS");
-    println!("cargo:rustc-check-cfg=cfg(Py_3_10)");
-    println!("cargo:rustc-check-cfg=cfg(Py_3_11)");
-    println!("cargo:rustc-check-cfg=cfg(Py_3_12)");
-    println!("cargo:rustc-check-cfg=cfg(Py_3_13)");
-    println!("cargo:rustc-check-cfg=cfg(Py_3_14)");
-    println!("cargo:rustc-check-cfg=cfg(Py_3_15)");
 }

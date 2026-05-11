@@ -21,4 +21,4 @@ Homepage = "https://github.com/ooni/userauth"
 Issues = "https://github.com/ooni/userauth/issues"
 
 [tool.maturin]
-features = ["pyo3/extension-module"]
+features = ["extension-module"]
