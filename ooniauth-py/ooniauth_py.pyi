@@ -48,6 +48,7 @@ class ServerState:
         request: str,
         probe_cc: str,
         probe_asn: str,
+        measurement_hash: str,
         age_range: tuple[builtins.int, builtins.int],
         min_measurement_count: builtins.int,
     ) -> str: ...
@@ -78,6 +79,7 @@ class UserState:
         self,
         probe_cc: str,
         probe_asn: str,
+        measurement_hash: str,
         age_range: tuple[builtins.int, builtins.int],
         min_measurement_count: builtins.int,
     ) -> SubmitRequest: ...

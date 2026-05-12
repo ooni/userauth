@@ -14,7 +14,7 @@ use rand::{CryptoRng, RngCore};
 use sha2::Sha512;
 use tracing::{instrument, trace};
 
-const SESSION_ID: &[u8] = b"registration";
+const SESSION_ID: &[u8] = b"ooni.org/userauth/v1/reg";
 
 CMZ! { UserAuthCredential:
     nym_id,
