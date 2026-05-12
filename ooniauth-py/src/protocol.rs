@@ -575,14 +575,7 @@ mod tests {
         let min_msm = 0u32;
         let measurement_hash = test_measurement_hash(py, 1);
         let submit = client
-            .make_submit_request(
-                py,
-                cc.clone_ref(py),
-                asn.clone_ref(py),
-                measurement_hash.clone_ref(py),
-                age_tuple,
-                min_msm,
-            )
+            .make_submit_request(py, cc.clone_ref(py), asn.clone_ref(py), age_tuple, min_msm)
             .unwrap();
         (
             server,
