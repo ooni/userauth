@@ -3,6 +3,7 @@ use std::sync::Once;
 use std::time::Instant;
 
 use ooniauth_core::registration::UserAuthCredential;
+use ooniauth_core::submit::submit_measurement_hash;
 use ooniauth_core::{scalar_u32, ServerState, UserState};
 use tracing_forest::util::LevelFilter;
 use tracing_forest::ForestLayer;
@@ -159,6 +160,7 @@ fn run_basic_usage_demo() -> Result<String, String> {
     let today = ServerState::today();
     let age_range = (today - 30)..(today + 1);
     let measurement_count_range = 0..100;
+    let measurement_hash = submit_measurement_hash(b"measurement:US:AS1234");
 
     let now = Instant::now();
     let ((submit_request, submit_state), nym) = user
@@ -166,6 +168,7 @@ fn run_basic_usage_demo() -> Result<String, String> {
             &mut rng,
             probe_cc.clone(),
             probe_asn.clone(),
+            &measurement_hash,
             age_range.clone(),
             measurement_count_range.clone(),
         )
@@ -193,6 +196,7 @@ fn run_basic_usage_demo() -> Result<String, String> {
             &nym,
             &probe_cc,
             &probe_asn,
+            &measurement_hash,
             age_range,
             measurement_count_range,
         )
@@ -234,6 +238,7 @@ fn run_basic_usage_demo() -> Result<String, String> {
 
     let age_range2 = (today - 30)..(today + 1);
     let measurement_count_range2 = 0..100;
+    let measurement_hash2 = submit_measurement_hash(b"measurement:UK:AS5678");
 
     let now = Instant::now();
     let ((submit_request2, submit_state2), nym2) = user
@@ -241,6 +246,7 @@ fn run_basic_usage_demo() -> Result<String, String> {
             &mut rng,
             probe_cc2.clone(),
             probe_asn2.clone(),
+            &measurement_hash2,
             age_range2.clone(),
             measurement_count_range2.clone(),
         )
@@ -264,6 +270,7 @@ fn run_basic_usage_demo() -> Result<String, String> {
             &nym2,
             &probe_cc2,
             &probe_asn2,
+            &measurement_hash2,
             age_range2,
             measurement_count_range2,
         )

@@ -6,7 +6,7 @@ use group::Group;
 use rand::{CryptoRng, RngCore};
 use sha2::Sha512;
 
-const SESSION_ID: &[u8] = b"update";
+const SESSION_ID: &[u8] = b"ooni.org/userauth/v1/upd";
 
 muCMZProtocol!(update,
     Old: UserAuthCredential { nym_id: H, age: H, measurement_count: H},

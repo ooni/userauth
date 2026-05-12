@@ -96,6 +96,7 @@ fn bench_user_submit_request(c: &mut Criterion) {
     let today = ServerState::today();
     let age_range = (today - 30)..(today + 1);
     let measurement_count_range = 0..100;
+    let measurement_hash = [1u8; 32];
 
     c.bench_function("user.submit_request", |b| {
         b.iter_batched(
@@ -112,6 +113,7 @@ fn bench_user_submit_request(c: &mut Criterion) {
                     &mut rng,
                     "US".to_string(),
                     "AS1234".to_string(),
+                    &measurement_hash,
                     age_range.clone(),
                     measurement_count_range.clone(),
                 )
@@ -129,6 +131,7 @@ fn bench_user_handle_submit_response(c: &mut Criterion) {
     let today = ServerState::today();
     let age_range = (today - 30)..(today + 1);
     let measurement_count_range = 0..100;
+    let measurement_hash = [1u8; 32];
 
     c.bench_function("user.handle_submit_response", |b| {
         b.iter_batched(
@@ -144,6 +147,7 @@ fn bench_user_handle_submit_response(c: &mut Criterion) {
                         &mut rng,
                         "US".to_string(),
                         "AS1234".to_string(),
+                        &measurement_hash,
                         age_range.clone(),
                         measurement_count_range.clone(),
                     )
@@ -155,6 +159,7 @@ fn bench_user_handle_submit_response(c: &mut Criterion) {
                         &nym,
                         "US",
                         "AS1234",
+                        &measurement_hash,
                         age_range.clone(),
                         measurement_count_range.clone(),
                     )

@@ -1,5 +1,6 @@
 use std::time::Instant;
 
+use ooniauth_core::submit::submit_measurement_hash;
 use ooniauth_core::{scalar_u32, ServerState, UserState};
 use tracing_forest::util::LevelFilter;
 use tracing_forest::ForestLayer;
@@ -97,12 +98,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let today = ServerState::today();
     let age_range = (today - 30)..(today + 1);
     let measurement_count_range = 0..100;
+    let measurement_hash = submit_measurement_hash(b"measurement:US:AS1234");
 
     let now = Instant::now();
     let ((submit_request, submit_state), nym) = user.submit_request(
         &mut rng,
         probe_cc.clone(),
         probe_asn.clone(),
+        &measurement_hash,
         age_range.clone(),
         measurement_count_range.clone(),
     )?;
@@ -130,6 +133,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &nym,
         &probe_cc,
         &probe_asn,
+        &measurement_hash,
         age_range,
         measurement_count_range,
     )?;
@@ -175,12 +179,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let age_range2 = (today - 30)..(today + 1);
     let measurement_count_range2 = 0..100;
+    let measurement_hash2 = submit_measurement_hash(b"measurement:UK:AS5678");
 
     let now = Instant::now();
     let ((submit_request2, submit_state2), nym2) = user.submit_request(
         &mut rng,
         probe_cc2.clone(),
         probe_asn2.clone(),
+        &measurement_hash2,
         age_range2.clone(),
         measurement_count_range2.clone(),
     )?;
@@ -203,6 +209,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &nym2,
         &probe_cc2,
         &probe_asn2,
+        &measurement_hash2,
         age_range2,
         measurement_count_range2,
     )?;
