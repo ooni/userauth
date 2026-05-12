@@ -10,6 +10,7 @@ use sha2::{Digest, Sha256, Sha512};
 use tracing::{debug, instrument, trace};
 
 const SESSION_ID: &[u8] = b"submit";
+const PROBE_ID_SALT: &[u8] = b"ooni.org/userauth/v1";
 
 muCMZProtocol!(submit<min_age_today, max_age, min_measurement_count,
         max_measurement_count, @DOMAIN, @NYM>,
@@ -46,7 +47,10 @@ impl SubmitRequest {
 }
 
 fn digest_point(point: RistrettoPoint) -> [u8; 32] {
-    let digest = Sha256::digest(point.compress().as_bytes());
+    let mut hasher = Sha256::new();
+    hasher.update(PROBE_ID_SALT);
+    hasher.update(point.compress().as_bytes());
+    let digest = hasher.finalize();
     let mut out = [0u8; 32];
     out.copy_from_slice(&digest);
     out
@@ -225,7 +229,7 @@ impl ServerState {
         let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
         let DOMAIN = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
 
-        // The probe id is the same as the nym point.
+        // The probe id must be the salted hash of the nym point.
         // Otherwise, return an error.
         // We do not really care about the server returning early here,
         // a malicious probe should already have computed the probe ID from the
