@@ -37,8 +37,19 @@ class ServerState:
     def handle_registration_request(self, registration_request:str) -> str: ...
     @staticmethod
     def today() -> builtins.int: ...
-    def handle_submit_request(self, nym:str, request:str, probe_cc:str, probe_asn:str, age_range:tuple[builtins.int, builtins.int], min_measurement_count:builtins.int) -> str: ...
-    def handle_update_request(self, req:str, old_public_params:str, old_secret_key:str) -> str: ...
+    def handle_submit_request(
+        self,
+        nym: str,
+        request: str,
+        probe_cc: str,
+        probe_asn: str,
+        measurement_hash: str,
+        age_range: tuple[builtins.int, builtins.int],
+        min_measurement_count: builtins.int,
+    ) -> str: ...
+    def handle_update_request(
+        self, req: str, old_public_params: str, old_secret_key: str
+    ) -> str: ...
 
 class SubmitRequest:
     @property
@@ -58,8 +69,16 @@ class UserState:
         Note that this function will only work if you previously called
         `make_registration_request`
         """
-    def make_submit_request(self, probe_cc:str, probe_asn:str, age_range:tuple[builtins.int, builtins.int], min_measurement_count:builtins.int) -> SubmitRequest: ...
-    def handle_submit_response(self, response:str) -> None:
+
+    def make_submit_request(
+        self,
+        probe_cc: str,
+        probe_asn: str,
+        measurement_hash: str,
+        age_range: tuple[builtins.int, builtins.int],
+        min_measurement_count: builtins.int,
+    ) -> SubmitRequest: ...
+    def handle_submit_response(self, response: str) -> None:
         r"""
         Handle a submit response sent by the server, updating your credentials
         
@@ -81,4 +100,3 @@ def get_protocol_version() -> builtins.str:
     r"""
     Returns the version of the `ooniauth-core`, the actual protocol implementation.
     """
-

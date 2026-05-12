@@ -38,11 +38,13 @@ fn bench_submit(c: &mut Criterion) {
 
         let age_range = (today - 30)..(today + 1);
         let msm_range = 0..100;
+        let measurement_hash = [1u8; 32];
         let ((req, _), nym) = user
             .submit_request(
                 &mut rng,
                 cc.into(),
                 asn.into(),
+                &measurement_hash,
                 age_range.clone(),
                 msm_range.clone(),
             )
@@ -54,6 +56,7 @@ fn bench_submit(c: &mut Criterion) {
                 black_box(&nym),
                 black_box(cc),
                 black_box(asn),
+                black_box(&measurement_hash),
                 black_box(age_range.clone()),
                 black_box(msm_range.clone()),
             )
