@@ -4,10 +4,7 @@ use ooniauth_core::submit::submit;
 use ooniauth_core::update::*;
 use ooniauth_core::{self as ooni, PublicParameters, SecretKey};
 
-use pyo3::{
-    prelude::*,
-    types::PyString,
-};
+use pyo3::{prelude::*, types::PyString};
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pyfunction, gen_stub_pymethods};
 
 use crate::utils::{from_pystring, to_pystring};
@@ -22,6 +19,22 @@ fn py_string_arg<'py>(
         .to_str(py)
         .map_err(|e| OoniErr::DeserializationFailed {
             reason: format!("invalid {name}: {e}"),
+        })
+}
+
+fn base64_32_arg<'py>(
+    py: Python<'py>,
+    value: &'py Py<PyString>,
+    name: &str,
+) -> OoniResult<[u8; 32]> {
+    BASE64_STANDARD
+        .decode(py_string_arg(py, value, name)?)
+        .map_err(|e| OoniErr::DeserializationFailed {
+            reason: e.to_string(),
+        })?
+        .try_into()
+        .map_err(|value: Vec<u8>| OoniErr::DeserializationFailed {
+            reason: format!("{name} must decode to 32 bytes, got {}", value.len()),
         })
 }
 
@@ -99,19 +112,13 @@ impl ServerState {
         request: Py<PyString>,
         probe_cc: Py<PyString>,
         probe_asn: Py<PyString>,
+        measurement_hash: Py<PyString>,
         age_range: (u32, u32),
         min_measurement_count: u32,
     ) -> OoniResult<Py<PyString>> {
         // Convert arguments from py types to rust types
-        let nym: [u8; 32] = BASE64_STANDARD
-            .decode(py_string_arg(py, &nym, "nym")?)
-            .map_err(|e| OoniErr::DeserializationFailed {
-                reason: e.to_string(),
-            })?
-            .try_into()
-            .map_err(|nym: Vec<u8>| OoniErr::DeserializationFailed {
-                reason: format!("nym must decode to 32 bytes, got {}", nym.len()),
-            })?;
+        let nym = base64_32_arg(py, &nym, "nym")?;
+        let measurement_hash = base64_32_arg(py, &measurement_hash, "measurement_hash")?;
 
         let request = from_pystring::<ooniauth_core::submit::SubmitRequest>(py, &request)?;
         let probe_cc = py_string_arg(py, &probe_cc, "probe_cc")?;
@@ -125,6 +132,7 @@ impl ServerState {
             &nym,
             probe_cc,
             probe_asn,
+            &measurement_hash,
             age_range.0..age_range.1,
             min_measurement_count..u32::MAX,
         )?;
@@ -230,17 +238,20 @@ impl UserState {
         py: Python<'_>,
         probe_cc: Py<PyString>,
         probe_asn: Py<PyString>,
+        measurement_hash: Py<PyString>,
         age_range: (u32, u32),
         min_measurement_count: u32,
     ) -> OoniResult<SubmitRequest> {
         let probe_cc = probe_cc.to_str(py).expect("unable to get string");
         let probe_asn = probe_asn.to_str(py).expect("unable to get string");
+        let measurement_hash = base64_32_arg(py, &measurement_hash, "measurement_hash")?;
 
         let mut rng = rand::thread_rng();
         let ((result, client_state), nym) = self.state.submit_request(
             &mut rng,
             probe_cc.into(),
             probe_asn.into(),
+            &measurement_hash,
             age_range.0..age_range.1,
             min_measurement_count..u32::MAX,
         )?;
@@ -321,6 +332,10 @@ mod tests {
     use pyo3::{types::PyString, Py, Python};
     use rand::{rngs::ThreadRng, thread_rng};
 
+    fn test_measurement_hash(py: Python<'_>, value: u8) -> Py<PyString> {
+        PyString::new(py, &BASE64_STANDARD.encode([value; 32])).into()
+    }
+
     #[test]
     fn test_encoding_verifies() {
         // Check that the string encoding still let us verify
@@ -359,11 +374,13 @@ mod tests {
             let today = ServerState::today();
             let age_tuple = (today - 30, today + 1);
             let min_msm = 0u32;
+            let measurement_hash = test_measurement_hash(py, 1);
             let submit_req = client
                 .make_submit_request(
                     py,
                     cc.clone().into(),
                     asn.clone().into(),
+                    measurement_hash.clone_ref(py),
                     age_tuple,
                     min_msm,
                 )
@@ -376,6 +393,7 @@ mod tests {
                     submit_req.request,
                     cc.into(),
                     asn.into(),
+                    measurement_hash,
                     age_tuple,
                     min_msm,
                 )
@@ -454,12 +472,14 @@ mod tests {
             let today = ServerState::today();
             let age_tuple = (today - 30, today + 1);
             let min_msm = 0u32;
+            let measurement_hash = test_measurement_hash(py, 1);
 
             let submit = client
                 .make_submit_request(
                     py,
                     probe_cc.clone_ref(py),
                     probe_asn.clone_ref(py),
+                    measurement_hash.clone_ref(py),
                     age_tuple,
                     min_msm,
                 )
@@ -472,6 +492,7 @@ mod tests {
                     submit.request,
                     probe_cc.clone_ref(py),
                     probe_asn.clone_ref(py),
+                    measurement_hash,
                     age_tuple,
                     min_msm,
                 )
@@ -500,11 +521,13 @@ mod tests {
                 .expect("Bad credential update response");
 
             // Now make sure you can send another measurement
+            let measurement_hash = test_measurement_hash(py, 2);
             let submit = client
                 .make_submit_request(
                     py,
                     probe_cc.clone_ref(py),
                     probe_asn.clone_ref(py),
+                    measurement_hash.clone_ref(py),
                     age_tuple,
                     min_msm,
                 )
@@ -517,6 +540,7 @@ mod tests {
                     submit.request,
                     probe_cc,
                     probe_asn,
+                    measurement_hash,
                     age_tuple,
                     min_msm,
                 )
@@ -535,6 +559,7 @@ mod tests {
         crate::SubmitRequest,
         Py<PyString>,
         Py<PyString>,
+        Py<PyString>,
         (u32, u32),
         u32,
     ) {
@@ -548,26 +573,46 @@ mod tests {
         let today = crate::ServerState::today();
         let age_tuple = (today - 30, today + 1);
         let min_msm = 0u32;
+        let measurement_hash = test_measurement_hash(py, 1);
         let submit = client
             .make_submit_request(
                 py,
                 cc.clone_ref(py),
                 asn.clone_ref(py),
+                measurement_hash.clone_ref(py),
                 age_tuple,
                 min_msm,
             )
             .unwrap();
-        (server, submit, cc, asn, age_tuple, min_msm)
+        (
+            server,
+            submit,
+            cc,
+            asn,
+            measurement_hash,
+            age_tuple,
+            min_msm,
+        )
     }
 
     #[test]
     fn test_handle_submit_request_rejects_short_nym() {
         pyo3::Python::initialize();
         Python::attach(|py| {
-            let (server, submit, cc, asn, age_range, min_msm) = submit_fixture(py);
+            let (server, submit, cc, asn, measurement_hash, age_range, min_msm) =
+                submit_fixture(py);
             let bad_nym = PyString::new(py, &BASE64_STANDARD.encode([7u8; 31])).into();
             let err = server
-                .handle_submit_request(py, bad_nym, submit.request, cc, asn, age_range, min_msm)
+                .handle_submit_request(
+                    py,
+                    bad_nym,
+                    submit.request,
+                    cc,
+                    asn,
+                    measurement_hash,
+                    age_range,
+                    min_msm,
+                )
                 .unwrap_err();
             assert!(matches!(err, OoniErr::DeserializationFailed { .. }));
         });

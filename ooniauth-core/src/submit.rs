@@ -9,8 +9,29 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256, Sha512};
 use tracing::{debug, instrument, trace};
 
-const SESSION_ID: &[u8] = b"submit";
-const PROBE_ID_SALT: &[u8] = b"ooni.org/userauth/v1";
+const PROBE_ID_SALT: &[u8] = b"ooni.org/userauth/v1/pid";
+const SUBMIT_SESSION_ID_SALT: &[u8] = b"ooni.org/v1/sid";
+pub type MeasurementHash = [u8; 32];
+pub type SubmitSessionId = [u8; 32];
+
+/// Hash measurement material for submit proof binding.
+pub fn submit_measurement_hash(measurement: &[u8]) -> MeasurementHash {
+    let measurement_hash = Sha256::digest(measurement);
+    let mut out = [0u8; 32];
+    out.copy_from_slice(&measurement_hash);
+    out
+}
+
+/// Derive the submit proof session ID from a 32-byte measurement hash.
+pub fn submit_session_id(measurement_hash: &MeasurementHash) -> SubmitSessionId {
+    let mut hasher = Sha256::new();
+    hasher.update(SUBMIT_SESSION_ID_SALT);
+    hasher.update(measurement_hash);
+    let digest = hasher.finalize();
+    let mut out = [0u8; 32];
+    out.copy_from_slice(&digest);
+    out
+}
 
 muCMZProtocol!(submit<min_age_today, max_age, min_measurement_count,
         max_measurement_count, @DOMAIN, @NYM>,
@@ -62,6 +83,7 @@ impl UserState {
         rng,
         probe_cc,
         probe_asn,
+        measurement_hash,
         age_range,
         measurement_count_range
     ))]
@@ -70,6 +92,7 @@ impl UserState {
         rng: &mut (impl RngCore + CryptoRng),
         probe_cc: String,
         probe_asn: String,
+        measurement_hash: &MeasurementHash,
         age_range: std::ops::Range<u32>,
         measurement_count_range: std::ops::Range<u32>,
     ) -> Result<((SubmitRequest, submit::ClientState), [u8; 32]), CredentialError> {
@@ -160,7 +183,8 @@ impl UserState {
         };
 
         trace!("Preparing submit proof with params");
-        match submit::prepare(rng, SESSION_ID, Old, New, &params) {
+        let session_id = submit_session_id(measurement_hash);
+        match submit::prepare(rng, &session_id, Old, New, &params) {
             Ok((core_request, client_state)) => {
                 debug!("Submit request prepared successfully");
                 let probe_id = digest_point(NYM);
@@ -203,6 +227,7 @@ impl ServerState {
         probe_id,
         probe_cc,
         probe_asn,
+        measurement_hash,
         age_range,
         measurement_count_range
     ))]
@@ -213,6 +238,7 @@ impl ServerState {
         probe_id: &[u8; 32],
         probe_cc: &str,
         probe_asn: &str,
+        measurement_hash: &MeasurementHash,
         age_range: std::ops::Range<u32>,
         measurement_count_range: std::ops::Range<u32>,
     ) -> Result<submit::Reply, CMZError> {
@@ -245,9 +271,10 @@ impl ServerState {
 
         let server_sk = self.sk.clone();
         let server_pp = self.pp.clone();
+        let session_id = submit_session_id(measurement_hash);
         match submit::handle(
             rng,
-            SESSION_ID,
+            &session_id,
             recvreq,
             move |Old: &mut UserAuthCredential, New: &mut UserAuthCredential| {
                 // Set the private key for the credentials - this is essential for the protocol
@@ -343,11 +370,13 @@ mod tests {
         let today = ServerState::today();
         let age_range = (today - 30)..(today + 1); // Credential valid for 30 days
         let measurement_count_range = 0..100;
+        let measurement_hash = submit_measurement_hash(b"measurement:US:AS1234");
 
         let result = user_state.submit_request(
             rng,
             probe_cc.clone(),
             probe_asn.clone(),
+            &measurement_hash,
             age_range.clone(),
             measurement_count_range.clone(),
         );
@@ -374,6 +403,7 @@ mod tests {
             &nym,
             &probe_cc,
             &probe_asn,
+            &measurement_hash,
             age_range,
             measurement_count_range,
         );
@@ -400,5 +430,70 @@ mod tests {
         // Verify measurement count was incremented
         let new_count = scalar_u32(&updated_cred.measurement_count.unwrap()).unwrap();
         assert_eq!(new_count, 1, "Measurement count should be incremented to 1");
+    }
+
+    #[test]
+    fn test_submit_request_rejects_replaced_measurement() {
+        let rng = &mut rand::thread_rng();
+
+        let server_state = ServerState::new(rng);
+        let mut user_state = UserState::new(server_state.public_parameters());
+
+        let (reg_request, reg_client_state) = user_state.request(rng).unwrap();
+        let reg_response = server_state.open_registration(reg_request).unwrap();
+        user_state
+            .handle_response(reg_client_state, reg_response)
+            .unwrap();
+
+        let probe_cc = "US".to_string();
+        let probe_asn = "AS1234".to_string();
+        let today = ServerState::today();
+        let age_range = (today - 30)..(today + 1);
+        let measurement_count_range = 0..100;
+        let original_measurement_hash = submit_measurement_hash(b"measurement:US:AS1234");
+        let replaced_measurement_hash = submit_measurement_hash(b"measurement:US:AS1234:replaced");
+
+        let ((request, _client_state), nym) = user_state
+            .submit_request(
+                rng,
+                probe_cc.clone(),
+                probe_asn.clone(),
+                &original_measurement_hash,
+                age_range.clone(),
+                measurement_count_range.clone(),
+            )
+            .unwrap();
+
+        assert_ne!(original_measurement_hash, replaced_measurement_hash);
+
+        let replaced_result = server_state.handle_submit(
+            rng,
+            request.clone(),
+            &nym,
+            &probe_cc,
+            &probe_asn,
+            &replaced_measurement_hash,
+            age_range.clone(),
+            measurement_count_range.clone(),
+        );
+        assert!(
+            replaced_result.is_err(),
+            "Server should reject a submit request verified against a replaced measurement"
+        );
+
+        let original_result = server_state.handle_submit(
+            rng,
+            request,
+            &nym,
+            &probe_cc,
+            &probe_asn,
+            &original_measurement_hash,
+            age_range,
+            measurement_count_range,
+        );
+        assert!(
+            original_result.is_ok(),
+            "Server should accept the submit request with the original measurement session ID"
+        );
     }
 }
