@@ -25,41 +25,16 @@ the resulting Python package during development, see more details
 
 ### Testing installation
 
-If you try to run the tests as you usually would with `cargo test`, you will get linking errors. This
-happens because Maturin provides a build configuration with all the linking flags required to build
-the library. However, it does not provide a `maturing test` command that could help you with this.
+Run the Rust tests with:
 
-A possible solution is to manually specify the linking flags to the compiler, but in order to do this
-you will probably need to download the specific Python version (3.10). A good way to do this
-is using [Pyenv](https://github.com/pyenv/pyenv):
-
-1. [Install Pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation)
-2. Install Python 3.10.0 with pyenv: `pyenv install 3.10.0`
-
-With the Python version installed, you can create a `.cargo/config.toml`
-with the linking flags. Create the file in `userauth/.cargo/config.toml`
-and fill the following template:
-
-```toml
-[target.'cfg(all())']
-rustflags = [
-    "-C", "link-arg=-Wl,-rpath,<YOUR PYENV PATH HERE>/.pyenv/versions/3.10.0/lib",
-    "-C", "link-arg=-L<YOUR PYENV PATH HERE>/.pyenv/versions/3.10.0/lib",
-    "-C", "link-arg=-lpython3.10",
-]
+```bash
+cargo test
 ```
 
-Example result:
-```toml
-[target.'cfg(all())']
-rustflags = [
-    "-C", "link-arg=-Wl,-rpath,/home/ooni/.pyenv/versions/3.10.0/lib",
-    "-C", "link-arg=-L/home/ooni/.pyenv/versions/3.10.0/lib",
-    "-C", "link-arg=-lpython3.10",
-]
-```
-
-**Note**: Make sure to create this file in `userauth/.cargo/config.toml` and not in `userauth/ooniauth-py/.cargo.toml`
+The Python extension-module linker mode is enabled only for Maturin builds.
+If you need to test against a specific Python interpreter, activate a virtualenv
+or set `PYO3_PYTHON` before running the tests. The virtualenv must point to a
+base Python installation which provides an embeddable shared library.
 
 ### Usage
 
