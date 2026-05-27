@@ -14,8 +14,6 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
-  # Portable abi3 wheels without a build-time interpreter (PyO3).
-  PYO3_NO_PYTHON: "1"
 
 jobs:
   build-wheels:
@@ -28,13 +26,17 @@ jobs:
           # Linux: build inside PyPA manylinux images via maturin-action (portable glibc wheels).
           - os: ubuntu-latest
             label: linux-x86_64
-          - os: ubuntu-24.04-arm
-            label: linux-aarch64
           - os: macos-latest
             label: macos
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      # PyO3 (abi3-py310) links against libpython3.10 for host-side steps (stub gen + macOS wheel).
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
