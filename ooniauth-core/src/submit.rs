@@ -46,7 +46,7 @@ impl SubmitRequest {
     }
 }
 
-fn digest_point(point: RistrettoPoint) -> [u8; 32] {
+pub fn digest_point(point: RistrettoPoint) -> [u8; 32] {
     let mut hasher = Sha256::new();
     hasher.update(PROBE_ID_SALT);
     hasher.update(point.compress().as_bytes());
