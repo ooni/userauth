@@ -4,10 +4,7 @@ use ooniauth_core::submit::submit;
 use ooniauth_core::update::*;
 use ooniauth_core::{self as ooni, PublicParameters, SecretKey};
 
-use pyo3::{
-    prelude::*,
-    types::PyString,
-};
+use pyo3::{prelude::*, types::PyString};
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pyfunction, gen_stub_pymethods};
 
 use crate::utils::{from_pystring, to_pystring};
@@ -549,13 +546,7 @@ mod tests {
         let age_tuple = (today - 30, today + 1);
         let min_msm = 0u32;
         let submit = client
-            .make_submit_request(
-                py,
-                cc.clone_ref(py),
-                asn.clone_ref(py),
-                age_tuple,
-                min_msm,
-            )
+            .make_submit_request(py, cc.clone_ref(py), asn.clone_ref(py), age_tuple, min_msm)
             .unwrap();
         (server, submit, cc, asn, age_tuple, min_msm)
     }
