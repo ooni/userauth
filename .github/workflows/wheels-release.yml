@@ -2,11 +2,8 @@ name: Build Wheels and Release
 
 on:
   push:
-    # TODO: uncomment this before merging
-    # tags:
-    #   - "userauth-*"
-    branches:
-      - "36-build-matrix"
+    tags:
+      - "userauth-*"
   workflow_dispatch: {}
 
 permissions:
@@ -93,13 +90,12 @@ jobs:
           files: |
             dist/*.whl
 
-      # TODO: Uncomment before merging
       # This might fail with status code 400 if the version already exists,
       # remember to bump it
-      # - name: Publish to PyPI
-      #   uses: pypa/gh-action-pypi-publish@release/v1
-      #   with:
-      #     # password: ${{ secrets.TEST_PYPI_API_TOKEN }} # use this for testing the workflow
-      #     password: ${{ secrets.PYPI_API_TOKEN }}
-      #     packages-dir: dist
-      #     # repository-url: https://test.pypi.org/legacy/ # uncomment this to use the test api token
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # password: ${{ secrets.TEST_PYPI_API_TOKEN }} # use this for testing the workflow
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: dist
+          # repository-url: https://test.pypi.org/legacy/ # uncomment this to use the test api token
