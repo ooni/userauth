@@ -11,40 +11,52 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
-  # Prefer building portable abi3 wheels without requiring a build-time interpreter.
-  PYO3_NO_PYTHON: "1"
 
 jobs:
   build-wheels:
-    name: Build wheels (${{ matrix.os }})
+    name: Build wheels (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        include:
+          # Linux: build inside PyPA manylinux images via maturin-action (portable glibc wheels).
+          - os: ubuntu-latest
+            label: linux-x86_64
+          - os: macos-latest
+            label: macos
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
+
+      # PyO3 (abi3-py310) links against libpython3.10 for host-side steps (stub gen + macOS wheel).
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install maturin
-        run: python -m pip install -U pip maturin
-
-      - name: Build wheels
+      - name: Generate Python stubs
         working-directory: ooniauth-py
-        run: make wheels
+        run: cargo run --locked --bin gen_stubs
+
+      # manylinux is applied on Linux only, ignored on macOS. See:
+      # https://www.maturin.rs/distribution.html
+      # https://github.com/PyO3/maturin-action
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: ooniauth-py
+          manylinux: "2_28"
+          args: --release --locked --out wheels --compatibility pypi
+          docker-options: -e PYO3_NO_PYTHON=1
 
       - name: Upload wheel artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: wheels-${{ matrix.os }}
+          name: wheels-${{ matrix.label }}
           path: ooniauth-py/wheels/*.whl
           if-no-files-found: error
 
@@ -54,10 +66,10 @@ jobs:
     needs: build-wheels
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Download wheel artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: wheels-*
           path: dist
