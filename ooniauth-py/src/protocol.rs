@@ -2,7 +2,9 @@ use base64::prelude::*;
 use ooniauth_core::registration::open_registration;
 use ooniauth_core::submit::submit;
 use ooniauth_core::update::*;
-use ooniauth_core::{self as ooni, PublicParameters, SecretKey};
+use ooniauth_core::{self as ooni, PublicParameters, SecretKey,
+    submit::submit_measurement_hash
+};
 
 use pyo3::{prelude::*, types::PyString};
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pyfunction, gen_stub_pymethods};
@@ -117,27 +119,48 @@ impl ServerState {
         min_measurement_count: u32,
     ) -> OoniResult<Py<PyString>> {
         // Convert arguments from py types to rust types
-        let nym = base64_32_arg(py, &nym, "nym")?;
         let measurement_hash = base64_32_arg(py, &measurement_hash, "measurement_hash")?;
 
-        let request = from_pystring::<ooniauth_core::submit::SubmitRequest>(py, &request)?;
-        let probe_cc = py_string_arg(py, &probe_cc, "probe_cc")?;
-        let probe_asn = py_string_arg(py, &probe_asn, "probe_asn")?;
-
-        // Handle submission
-        let mut rng = rand::thread_rng();
-        let result = self.state.handle_submit(
-            &mut rng,
+        self.handle_submit_request_impl(
+            py,
+            nym,
             request,
-            &nym,
             probe_cc,
             probe_asn,
             &measurement_hash,
-            age_range.0..age_range.1,
-            min_measurement_count..u32::MAX,
-        )?;
+            age_range,
+            min_measurement_count,
+        )
+    }
 
-        Ok(to_pystring(py, &result))
+    /// Performs a submission request computing the hash from the input
+    /// measurement. Computes the hash internally using the
+    /// [submit_measurement_hash] function
+    #[allow(clippy::too_many_arguments)]
+    fn handle_submit_request_with_hash(
+        &self,
+        py: Python<'_>,
+        nym: Py<PyString>,
+        request: Py<PyString>,
+        probe_cc: Py<PyString>,
+        probe_asn: Py<PyString>,
+        measurement: Py<PyString>,
+        age_range: (u32, u32),
+        min_measurement_count: u32,
+    ) -> OoniResult<Py<PyString>> {
+        let measurement_str = py_string_arg(py, &measurement, "measurement")?;
+        let measurement_hash = submit_measurement_hash(measurement_str.as_bytes());
+
+        self.handle_submit_request_impl(
+            py,
+            nym,
+            request,
+            probe_cc,
+            probe_asn,
+            &measurement_hash,
+            age_range,
+            min_measurement_count,
+        )
     }
 
     fn handle_update_request(
@@ -155,6 +178,42 @@ impl ServerState {
         let resp = self.state.handle_update(&mut rng, req, &old_sk, &old_pp)?;
 
         Ok(to_pystring(py, &resp))
+    }
+}
+
+// Methods in this implementation block are not exposed to Python
+impl ServerState {
+    #[allow(clippy::too_many_arguments)]
+    fn handle_submit_request_impl(
+        &self,
+        py: Python<'_>,
+        nym: Py<PyString>,
+        request: Py<PyString>,
+        probe_cc: Py<PyString>,
+        probe_asn: Py<PyString>,
+        measurement_hash: &[u8; 32],
+        age_range: (u32, u32),
+        min_measurement_count: u32,
+    ) -> OoniResult<Py<PyString>> {
+        let nym = base64_32_arg(py, &nym, "nym")?;
+
+        let request = from_pystring::<ooniauth_core::submit::SubmitRequest>(py, &request)?;
+        let probe_cc = py_string_arg(py, &probe_cc, "probe_cc")?;
+        let probe_asn = py_string_arg(py, &probe_asn, "probe_asn")?;
+
+        let mut rng = rand::thread_rng();
+        let result = self.state.handle_submit(
+            &mut rng,
+            request,
+            &nym,
+            probe_cc,
+            probe_asn,
+            measurement_hash,
+            age_range.0..age_range.1,
+            min_measurement_count..u32::MAX,
+        )?;
+
+        Ok(to_pystring(py, &result))
     }
 }
 
