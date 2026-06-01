@@ -2,9 +2,8 @@ use base64::prelude::*;
 use ooniauth_core::registration::open_registration;
 use ooniauth_core::submit::submit;
 use ooniauth_core::update::*;
-use ooniauth_core::{self as ooni, PublicParameters, SecretKey,
-    submit::submit_measurement_hash
-};
+use ooniauth_core::{self as ooni, PublicParameters, SecretKey};
+use ooniauth_core::submit::submit_measurement_hash as core_submit_measurement_hash;
 
 use pyo3::{prelude::*, types::PyString};
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pyfunction, gen_stub_pymethods};
@@ -45,6 +44,16 @@ fn base64_32_arg<'py>(
 #[pyfunction]
 pub fn get_protocol_version() -> &'static str {
     ooniauth_core::VERSION
+}
+
+/// Hash measurement body for submit proof binding.
+///
+/// Returns a base64-encoded 32-byte hash suitable for use with
+/// `UserState.make_submit_request` and `ServerState.handle_submit_request`.
+#[gen_stub_pyfunction(module = "ooniauth-py")]
+#[pyfunction]
+pub fn submit_measurement_hash(measurement: &str) -> String {
+    BASE64_STANDARD.encode(core_submit_measurement_hash(measurement.as_bytes()))
 }
 
 #[gen_stub_pyclass]
@@ -149,7 +158,7 @@ impl ServerState {
         min_measurement_count: u32,
     ) -> OoniResult<Py<PyString>> {
         let measurement_str = py_string_arg(py, &measurement, "measurement")?;
-        let measurement_hash = submit_measurement_hash(measurement_str.as_bytes());
+        let measurement_hash = core_submit_measurement_hash(measurement_str.as_bytes());
 
         self.handle_submit_request_impl(
             py,
@@ -393,6 +402,15 @@ mod tests {
 
     fn test_measurement_hash(py: Python<'_>, value: u8) -> Py<PyString> {
         PyString::new(py, &BASE64_STANDARD.encode([value; 32])).into()
+    }
+
+    #[test]
+    fn test_submit_measurement_hash_wrapper() {
+        let measurement = b"measurement:US:AS1234";
+        let expected = BASE64_STANDARD.encode(ooniauth_core::submit::submit_measurement_hash(
+            measurement,
+        ));
+        assert_eq!(crate::submit_measurement_hash(std::str::from_utf8(measurement).unwrap()), expected);
     }
 
     #[test]
