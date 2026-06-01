@@ -5,46 +5,72 @@ import builtins
 import typing
 
 __version__: builtins.str
+
 class CredentialError(builtins.Exception):
     r"""
     An authentication error
     """
+
     ...
 
 class DeserializationFailed(builtins.Exception):
     r"""
     An error trying to deserialize a base64-encoded payload
     """
+
     ...
 
 class ProtocolError(builtins.Exception):
     r"""
     An error performing the protocol
     """
+
     ...
 
 class ServerState:
     def __new__(cls) -> ServerState: ...
     @staticmethod
-    def from_creds(public_parameters:str, secret_key:str) -> ServerState:
+    def from_creds(public_parameters: str, secret_key: str) -> ServerState:
         r"""
         Create a new server state from base64-encoded keys
         This is meant to be used by the server, so it can store the keys somewhere and recreate the
         state when needed
         """
+
     def get_secret_key(self) -> str: ...
     def get_public_parameters(self) -> str: ...
-    def handle_registration_request(self, registration_request:str) -> str: ...
+    def handle_registration_request(self, registration_request: str) -> str: ...
     @staticmethod
     def today() -> builtins.int: ...
-    def handle_submit_request(self, nym:str, request:str, probe_cc:str, probe_asn:str, measurement_hash:str, age_range:tuple[builtins.int, builtins.int], min_measurement_count:builtins.int) -> str: ...
-    def handle_submit_request_with_hash(self, nym:str, request:str, probe_cc:str, probe_asn:str, measurement:str, age_range:tuple[builtins.int, builtins.int], min_measurement_count:builtins.int) -> str:
+    def handle_submit_request(
+        self,
+        nym: str,
+        request: str,
+        probe_cc: str,
+        probe_asn: str,
+        measurement_hash: str,
+        age_range: tuple[builtins.int, builtins.int],
+        min_measurement_count: builtins.int,
+    ) -> str: ...
+    def handle_submit_request_with_hash(
+        self,
+        nym: str,
+        request: str,
+        probe_cc: str,
+        probe_asn: str,
+        measurement: str,
+        age_range: tuple[builtins.int, builtins.int],
+        min_measurement_count: builtins.int,
+    ) -> str:
         r"""
         Performs a submission request computing the hash from the input
         measurement. Computes the hash internally using the
         [submit_measurement_hash] function
         """
-    def handle_update_request(self, req:str, old_public_params:str, old_secret_key:str) -> str: ...
+
+    def handle_update_request(
+        self, req: str, old_public_params: str, old_secret_key: str
+    ) -> str: ...
 
 class SubmitRequest:
     @property
@@ -53,33 +79,43 @@ class SubmitRequest:
     def request(self) -> str: ...
 
 class UserState:
-    def __new__(cls, public_params:str) -> UserState: ...
+    def __new__(cls, public_params: str) -> UserState: ...
     def get_credential(self) -> typing.Optional[str]: ...
-    def set_public_params(self, new_public_params:str) -> None: ...
+    def set_public_params(self, new_public_params: str) -> None: ...
     def make_registration_request(self) -> str: ...
-    def handle_registration_response(self, resp:str) -> None:
+    def handle_registration_response(self, resp: str) -> None:
         r"""
         Handle a registration response sent by the server, updating your credentials
-        
+
         Note that this function will only work if you previously called
         `make_registration_request`
         """
-    def make_submit_request(self, probe_cc:str, probe_asn:str, measurement_hash:str, age_range:tuple[builtins.int, builtins.int], min_measurement_count:builtins.int) -> SubmitRequest: ...
-    def handle_submit_response(self, response:str) -> None:
+
+    def make_submit_request(
+        self,
+        probe_cc: str,
+        probe_asn: str,
+        measurement_hash: str,
+        age_range: tuple[builtins.int, builtins.int],
+        min_measurement_count: builtins.int,
+    ) -> SubmitRequest: ...
+    def handle_submit_response(self, response: str) -> None:
         r"""
         Handle a submit response sent by the server, updating your credentials
-        
+
         Note that this function will only work if you previously called
         `make_submit_request`
         """
+
     def make_credential_update_request(self) -> str:
         r"""
         Creates a credential update request to be sent to the server.
         """
-    def handle_credential_update_response(self, resp:str) -> None:
+
+    def handle_credential_update_response(self, resp: str) -> None:
         r"""
         Handles the credential update response sent by the server, updating your credentials.
-        
+
         This function only works if you previosly called `make_credential_update_request`
         """
 
@@ -88,11 +124,10 @@ def get_protocol_version() -> builtins.str:
     Returns the version of the `ooniauth-core`, the actual protocol implementation.
     """
 
-def submit_measurement_hash(measurement:builtins.str) -> builtins.str:
+def submit_measurement_hash(measurement: builtins.str) -> builtins.str:
     r"""
     Hash measurement body for submit proof binding.
-    
+
     Returns a base64-encoded 32-byte hash suitable for use with
     `UserState.make_submit_request` and `ServerState.handle_submit_request`.
     """
-
