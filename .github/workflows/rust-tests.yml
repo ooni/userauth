@@ -19,7 +19,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Run tests
-        run: cargo test -p ooniauth-core --all-targets --locked --verbose
+        run: cargo test --workspace --all-targets --locked --verbose
 
   python-bindings:
     runs-on: ubuntu-latest
