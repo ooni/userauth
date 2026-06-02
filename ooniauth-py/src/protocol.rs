@@ -310,26 +310,40 @@ impl UserState {
         age_range: (u32, u32),
         min_measurement_count: u32,
     ) -> OoniResult<SubmitRequest> {
-        let probe_cc = probe_cc.to_str(py).expect("unable to get string");
-        let probe_asn = probe_asn.to_str(py).expect("unable to get string");
         let measurement_hash = base64_32_arg(py, &measurement_hash, "measurement_hash")?;
 
-        let mut rng = rand::thread_rng();
-        let ((result, client_state), nym) = self.state.submit_request(
-            &mut rng,
-            probe_cc.into(),
-            probe_asn.into(),
+        self.make_submit_request_impl(
+            py,
+            probe_cc,
+            probe_asn,
             &measurement_hash,
-            age_range.0..age_range.1,
-            min_measurement_count..u32::MAX,
-        )?;
+            age_range,
+            min_measurement_count,
+        )
+    }
 
-        self.submit_client_state = Some(client_state);
+    /// Creates a submit request computing the hash from the input measurement.
+    /// Computes the hash internally using the [submit_measurement_hash] function
+    pub fn make_submit_request_with_hash(
+        &mut self,
+        py: Python<'_>,
+        probe_cc: Py<PyString>,
+        probe_asn: Py<PyString>,
+        measurement: Py<PyString>,
+        age_range: (u32, u32),
+        min_measurement_count: u32,
+    ) -> OoniResult<SubmitRequest> {
+        let measurement_str = py_string_arg(py, &measurement, "measurement")?;
+        let measurement_hash = core_submit_measurement_hash(measurement_str.as_bytes());
 
-        Ok(SubmitRequest {
-            nym: to_pystring(py, &nym),
-            request: to_pystring(py, &result),
-        })
+        self.make_submit_request_impl(
+            py,
+            probe_cc,
+            probe_asn,
+            &measurement_hash,
+            age_range,
+            min_measurement_count,
+        )
     }
 
     /// Handle a submit response sent by the server, updating your credentials
@@ -380,6 +394,39 @@ impl UserState {
         self.state.handle_update_response(update_state, response)?;
 
         Ok(())
+    }
+}
+
+// Methods in this implementation block are not exposed to Python
+impl UserState {
+    fn make_submit_request_impl(
+        &mut self,
+        py: Python<'_>,
+        probe_cc: Py<PyString>,
+        probe_asn: Py<PyString>,
+        measurement_hash: &[u8; 32],
+        age_range: (u32, u32),
+        min_measurement_count: u32,
+    ) -> OoniResult<SubmitRequest> {
+        let probe_cc = py_string_arg(py, &probe_cc, "probe_cc")?;
+        let probe_asn = py_string_arg(py, &probe_asn, "probe_asn")?;
+
+        let mut rng = rand::thread_rng();
+        let ((result, client_state), nym) = self.state.submit_request(
+            &mut rng,
+            probe_cc.into(),
+            probe_asn.into(),
+            measurement_hash,
+            age_range.0..age_range.1,
+            min_measurement_count..u32::MAX,
+        )?;
+
+        self.submit_client_state = Some(client_state);
+
+        Ok(SubmitRequest {
+            nym: to_pystring(py, &nym),
+            request: to_pystring(py, &result),
+        })
     }
 }
 
