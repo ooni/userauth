@@ -99,6 +99,19 @@ class UserState:
         age_range: tuple[builtins.int, builtins.int],
         min_measurement_count: builtins.int,
     ) -> SubmitRequest: ...
+    def make_submit_request_with_hash(
+        self,
+        probe_cc: str,
+        probe_asn: str,
+        measurement: str,
+        age_range: tuple[builtins.int, builtins.int],
+        min_measurement_count: builtins.int,
+    ) -> SubmitRequest:
+        r"""
+        Creates a submit request computing the hash from the input measurement.
+        Computes the hash internally using the [submit_measurement_hash] function
+        """
+
     def handle_submit_response(self, response: str) -> None:
         r"""
         Handle a submit response sent by the server, updating your credentials
