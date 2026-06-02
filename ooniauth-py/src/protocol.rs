@@ -526,6 +526,53 @@ mod tests {
     }
 
     #[test]
+    fn test_submit_with_hash() {
+        pyo3::Python::initialize();
+        Python::attach(|py| {
+            let server = crate::ServerState::new();
+            let mut client =
+                crate::UserState::new(py, server.get_public_parameters(py)).unwrap();
+
+            let req = client.make_registration_request(py).unwrap();
+            let reg_response = server.handle_registration_request(py, req).unwrap();
+            client.handle_registration_response(py, reg_response).unwrap();
+
+            let cc: Py<PyString> = PyString::new(py, "VE").into();
+            let asn: Py<PyString> = PyString::new(py, "AS1234").into();
+            let measurement: Py<PyString> = PyString::new(py, "measurement:VE:AS1234").into();
+            let today = ServerState::today();
+            let age_tuple = (today - 30, today + 1);
+            let min_msm = 0u32;
+
+            let submit_req = client
+                .make_submit_request_with_hash(
+                    py,
+                    cc.clone_ref(py),
+                    asn.clone_ref(py),
+                    measurement.clone_ref(py),
+                    age_tuple,
+                    min_msm,
+                )
+                .unwrap();
+
+            let resp = server
+                .handle_submit_request_with_hash(
+                    py,
+                    submit_req.nym,
+                    submit_req.request,
+                    cc,
+                    asn,
+                    measurement,
+                    age_tuple,
+                    min_msm,
+                )
+                .unwrap();
+
+            assert!(client.handle_submit_response(py, resp).is_ok());
+        });
+    }
+
+    #[test]
     fn test_credential_update_simple() {
         pyo3::Python::initialize();
         Python::attach(|py| {
