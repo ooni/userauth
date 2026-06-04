@@ -22,6 +22,7 @@ jobs:
       - name: Run tests
         run: cargo test --workspace --all-targets --locked --verbose
 
+  # Checks that python bindings can be compiled and used
   python-bindings:
     runs-on: ubuntu-latest
     steps:
