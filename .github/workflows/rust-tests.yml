@@ -2,14 +2,12 @@ name: Rust tests
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  core-tests:
+  workspace-tests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -18,9 +16,13 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Run tests
-        run: cargo test -p ooniauth-core --all-targets --locked --verbose
+      - name: Rust cache to speed up cold starts
+        uses: Swatinem/rust-cache@v2
 
+      - name: Run tests
+        run: cargo test --workspace --all-targets --locked --verbose
+
+  # Checks that python bindings can be compiled and used
   python-bindings:
     runs-on: ubuntu-latest
     steps:
