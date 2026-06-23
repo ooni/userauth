@@ -115,6 +115,13 @@ impl ServerState {
         ooni::ServerState::today()
     }
 
+    /// Handle a submit request from the client.
+    ///
+    /// Note that the probe_cc and probe_asn should have the following format:
+    /// - probe_cc = two letters, uppercase, alpha-numeric
+    /// - probe_asn = AS-prefixed, 3 <= len(probe_asn) <= 12, int value after AS
+    ///
+    /// This validation is left to the backend server implementing the library
     #[allow(clippy::too_many_arguments)]
     fn handle_submit_request(
         &self,
@@ -144,7 +151,13 @@ impl ServerState {
 
     /// Performs a submission request computing the hash from the input
     /// measurement. Computes the hash internally using the
-    /// [submit_measurement_hash] function
+    /// [submit_measurement_hash] function.
+    ///
+    /// Note that the probe_cc and probe_asn should have the following format:
+    /// - probe_cc = two letters, uppercase, alpha-numeric
+    /// - probe_asn = AS-prefixed, 3 <= len(probe_asn) <= 12, int value after AS
+    ///
+    /// This validation is left to the backend server implementing the library
     #[allow(clippy::too_many_arguments)]
     fn handle_submit_request_with_hash(
         &self,
@@ -301,6 +314,13 @@ impl UserState {
         Ok(())
     }
 
+    /// Make a submission request, to send a measurement to the server
+    ///
+    /// Note that the probe_cc and probe_asn should have the following format:
+    /// - probe_cc = two letters, uppercase, alpha-numeric
+    /// - probe_asn = AS-prefixed, 3 <= len(probe_asn) <= 12, int value after AS
+    ///
+    /// This validation is left to the backend server implementing the library
     pub fn make_submit_request(
         &mut self,
         py: Python<'_>,
@@ -324,6 +344,12 @@ impl UserState {
 
     /// Creates a submit request computing the hash from the input measurement.
     /// Computes the hash internally using the [submit_measurement_hash] function
+    ///
+    /// Note that the probe_cc and probe_asn should have the following format:
+    /// - probe_cc = two letters, uppercase, alpha-numeric
+    /// - probe_asn = AS-prefixed, 3 <= len(probe_asn) <= 12, int value after AS
+    ///
+    /// This validation is left to the backend server implementing the library
     pub fn make_submit_request_with_hash(
         &mut self,
         py: Python<'_>,
