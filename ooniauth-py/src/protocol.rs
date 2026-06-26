@@ -1,9 +1,9 @@
 use base64::prelude::*;
 use ooniauth_core::registration::open_registration;
 use ooniauth_core::submit::submit;
+use ooniauth_core::submit::submit_measurement_hash as core_submit_measurement_hash;
 use ooniauth_core::update::*;
 use ooniauth_core::{self as ooni, PublicParameters, SecretKey};
-use ooniauth_core::submit::submit_measurement_hash as core_submit_measurement_hash;
 
 use pyo3::{prelude::*, types::PyString};
 use pyo3_stub_gen::derive::{gen_stub_pyclass, gen_stub_pyfunction, gen_stub_pymethods};
@@ -118,7 +118,7 @@ impl ServerState {
     /// Handle a submit request from the client.
     ///
     /// Note that the probe_cc and probe_asn should have the following format:
-    /// - probe_cc = two letters, uppercase, alpha-numeric
+    /// - probe_cc = two uppercase ASCII letters
     /// - probe_asn = AS-prefixed, 3 <= len(probe_asn) <= 12, int value after AS
     ///
     /// This validation is left to the backend server implementing the library
@@ -152,12 +152,6 @@ impl ServerState {
     /// Performs a submission request computing the hash from the input
     /// measurement. Computes the hash internally using the
     /// [submit_measurement_hash] function.
-    ///
-    /// Note that the probe_cc and probe_asn should have the following format:
-    /// - probe_cc = two letters, uppercase, alpha-numeric
-    /// - probe_asn = AS-prefixed, 3 <= len(probe_asn) <= 12, int value after AS
-    ///
-    /// This validation is left to the backend server implementing the library
     #[allow(clippy::too_many_arguments)]
     fn handle_submit_request_with_hash(
         &self,
@@ -317,7 +311,7 @@ impl UserState {
     /// Make a submission request, to send a measurement to the server
     ///
     /// Note that the probe_cc and probe_asn should have the following format:
-    /// - probe_cc = two letters, uppercase, alpha-numeric
+    /// - probe_cc = two uppercase ASCII letters
     /// - probe_asn = AS-prefixed, 3 <= len(probe_asn) <= 12, int value after AS
     ///
     /// This validation is left to the backend server implementing the library
@@ -344,12 +338,6 @@ impl UserState {
 
     /// Creates a submit request computing the hash from the input measurement.
     /// Computes the hash internally using the [submit_measurement_hash] function
-    ///
-    /// Note that the probe_cc and probe_asn should have the following format:
-    /// - probe_cc = two letters, uppercase, alpha-numeric
-    /// - probe_asn = AS-prefixed, 3 <= len(probe_asn) <= 12, int value after AS
-    ///
-    /// This validation is left to the backend server implementing the library
     pub fn make_submit_request_with_hash(
         &mut self,
         py: Python<'_>,
@@ -480,10 +468,12 @@ mod tests {
     #[test]
     fn test_submit_measurement_hash_wrapper() {
         let measurement = b"measurement:US:AS1234";
-        let expected = BASE64_STANDARD.encode(ooniauth_core::submit::submit_measurement_hash(
-            measurement,
-        ));
-        assert_eq!(crate::submit_measurement_hash(std::str::from_utf8(measurement).unwrap()), expected);
+        let expected =
+            BASE64_STANDARD.encode(ooniauth_core::submit::submit_measurement_hash(measurement));
+        assert_eq!(
+            crate::submit_measurement_hash(std::str::from_utf8(measurement).unwrap()),
+            expected
+        );
     }
 
     #[test]
@@ -556,12 +546,13 @@ mod tests {
         pyo3::Python::initialize();
         Python::attach(|py| {
             let server = crate::ServerState::new();
-            let mut client =
-                crate::UserState::new(py, server.get_public_parameters(py)).unwrap();
+            let mut client = crate::UserState::new(py, server.get_public_parameters(py)).unwrap();
 
             let req = client.make_registration_request(py).unwrap();
             let reg_response = server.handle_registration_request(py, req).unwrap();
-            client.handle_registration_response(py, reg_response).unwrap();
+            client
+                .handle_registration_response(py, reg_response)
+                .unwrap();
 
             let cc: Py<PyString> = PyString::new(py, "VE").into();
             let asn: Py<PyString> = PyString::new(py, "AS1234").into();
