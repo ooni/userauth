@@ -77,6 +77,23 @@ pub fn digest_point(point: RistrettoPoint) -> [u8; 32] {
     out
 }
 
+fn submit_domain_generator(probe_cc: &str, probe_asn: &str) -> G {
+    debug_assert!(
+        probe_cc.len() == 2 && probe_cc.bytes().all(|b| b.is_ascii_uppercase()),
+        "probe_cc must be a two-letter uppercase ASCII country code"
+    );
+    debug_assert!(
+        (3..=12).contains(&probe_asn.len())
+            && probe_asn.strip_prefix("AS").is_some_and(|asn| {
+                asn.bytes().all(|b| b.is_ascii_digit()) && asn.parse::<u32>().is_ok()
+            }),
+        "probe_asn must be AS-prefixed ASCII digits with total length 3..=12"
+    );
+
+    let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
+    G::hash_from_bytes::<Sha512>(domain_str.as_bytes())
+}
+
 fn inclusive_upper_bound(range: &std::ops::Range<u32>) -> u32 {
     range.end.saturating_sub(1)
 }
@@ -113,9 +130,8 @@ impl UserState {
             ))?;
 
         // Domain-specific generator and NYM computation
-        let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
         trace!("Computing DOMAIN for submit request");
-        let DOMAIN = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
+        let DOMAIN = submit_domain_generator(&probe_cc, &probe_asn);
         let NYM = Old.nym_id.unwrap() * DOMAIN;
         debug!("NYM computed successfully");
 
@@ -252,8 +268,7 @@ impl ServerState {
             nym_point,
         } = req;
 
-        let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
-        let DOMAIN = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
+        let DOMAIN = submit_domain_generator(probe_cc, probe_asn);
 
         // The probe id must be the salted hash of the nym point.
         // Otherwise, return an error.
@@ -310,8 +325,7 @@ impl ServerState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Scalar, ServerState, UserState, G};
-    use sha2::Sha512;
+    use crate::{Scalar, ServerState, UserState};
 
     #[test]
     fn test_domain_nym_computation() {
@@ -320,16 +334,14 @@ mod tests {
 
         let probe_cc = "US";
         let probe_asn = "AS1234";
-        let domain_str = format!("ooni.org/{}/{}", probe_cc, probe_asn);
-        let domain = G::hash_from_bytes::<Sha512>(domain_str.as_bytes());
+        let domain = submit_domain_generator(probe_cc, probe_asn);
 
         // Test with a known nym_id
         let nym_id = Scalar::from(42u32);
         let nym = nym_id * domain;
 
         // Different domain should produce different NYM
-        let different_domain_str = format!("ooni.org/{}/{}", "UK", "AS5678");
-        let different_domain = G::hash_from_bytes::<Sha512>(different_domain_str.as_bytes());
+        let different_domain = submit_domain_generator("UK", "AS5678");
         let different_nym = nym_id * different_domain;
 
         assert_ne!(
