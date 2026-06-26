@@ -117,11 +117,16 @@ impl ServerState {
 
     /// Handle a submit request from the client.
     ///
-    /// Note that the probe_cc and probe_asn should have the following format:
-    /// - probe_cc = two uppercase ASCII letters
-    /// - probe_asn = AS-prefixed, 3 <= len(probe_asn) <= 12, int value after AS
+    /// Both arguments `probe_cc` and `probe_asn` MUST have the following format:
     ///
-    /// This validation is left to the backend server implementing the library
+    /// - probe_cc = two uppercase ASCII letters
+    /// - probe_asn = starts with "AS", 3 <= len(probe_asn) <= 12
+    ///
+    /// This validation is done in backend server validating measurements.
+    ///
+    /// # Panics
+    ///
+    /// The arguments `probe_cc` and `probe_asn` will cause a panic (in debug mode) if not valid.
     #[allow(clippy::too_many_arguments)]
     fn handle_submit_request(
         &self,
@@ -310,11 +315,16 @@ impl UserState {
 
     /// Make a submission request, to send a measurement to the server
     ///
-    /// Note that the probe_cc and probe_asn should have the following format:
-    /// - probe_cc = two uppercase ASCII letters
-    /// - probe_asn = AS-prefixed, 3 <= len(probe_asn) <= 12, int value after AS
+    /// The arguments `probe_cc` and `probe_asn` MUST have the following format:
     ///
-    /// This validation is left to the backend server implementing the library
+    /// - probe_cc = two uppercase ASCII letters
+    /// - probe_asn = starts with "AS", 3 <= len(probe_asn) <= 12
+    ///
+    /// This validation is done in backend server validating measurements.
+    ///
+    /// # Panics
+    ///
+    /// The arguments `probe_cc` and `probe_asn` will cause a panic (in debug mode) if not valid.
     pub fn make_submit_request(
         &mut self,
         py: Python<'_>,
