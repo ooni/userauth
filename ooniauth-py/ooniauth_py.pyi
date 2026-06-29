@@ -58,7 +58,8 @@ class ServerState:
         Both arguments `probe_cc` and `probe_asn` MUST have the following format:
 
         - probe_cc = two uppercase ASCII letters
-        - probe_asn = starts with "AS", 3 <= len(probe_asn) <= 12
+        - probe_asn = starts with "AS", 3 <= len(probe_asn) <= 12, and the int
+                      part after AS does not have leading 0s
 
         This validation is done in backend server validating measurements.
 
@@ -120,7 +121,8 @@ class UserState:
         The arguments `probe_cc` and `probe_asn` MUST have the following format:
 
         - probe_cc = two uppercase ASCII letters
-        - probe_asn = starts with "AS", 3 <= len(probe_asn) <= 12
+        - probe_asn = starts with "AS", 3 <= len(probe_asn) <= 12, and the int
+                      part after AS does not have leading 0s
 
         This validation is done in backend server validating measurements.
 
