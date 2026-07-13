@@ -6,8 +6,9 @@
  * - measurement_count: All new accounts will begin with 0
 */
 
-use super::{Scalar, G};
+use super::{scalar_u32, Scalar, G};
 use super::{ServerState, UserState};
+use crate::errors::CredentialError;
 use cmz::*;
 use group::Group;
 use rand::{CryptoRng, RngCore};
@@ -15,6 +16,11 @@ use sha2::Sha512;
 use tracing::{instrument, trace};
 
 const SESSION_ID: &[u8] = b"ooni.org/userauth/v1/reg";
+
+/// Maximum tolerated difference, in days, between the `age` attribute of a
+/// freshly issued credential and the client's own UTC date (clock skew and
+/// midnight crossings during the round trip).
+const REGISTRATION_AGE_SKEW_DAYS: u32 = 1;
 
 CMZ! { UserAuthCredential:
     nym_id,
@@ -66,17 +72,56 @@ impl UserState {
         &mut self,
         state: open_registration::ClientState,
         rep: open_registration::Reply,
-    ) -> Result<(), CMZError> {
+    ) -> Result<(), CredentialError> {
         trace!("Handling registration response");
         let replybytes = rep.as_bytes();
         let recvreply = open_registration::Reply::try_from(&replybytes[..]).unwrap();
-        match state.finalize(recvreply) {
-            Ok(cred) => {
-                self.credential = Some(cred.clone());
-                Ok(())
-            }
-            Err(_e) => Err(CMZError::IssProofFailed),
+        let cred = state
+            .finalize(recvreply)
+            .map_err(|_| CredentialError::CMZError(CMZError::IssProofFailed))?;
+
+        // The issuance proof only ties the MAC to the attributes as sent: the
+        // server remains free to choose `age`, and a unique value tags the
+        // credential for later anonymity-set partitioning (or delayed denial
+        // of service via the submission age range). Accept only a credential
+        // dated to the client's own day, within clock-skew tolerance.
+        let age = cred
+            .age
+            .as_ref()
+            .and_then(scalar_u32)
+            .ok_or_else(|| CredentialError::InvalidField(
+                String::from("age"),
+                String::from("missing or does not fit in u32"),
+            ))?;
+        let today = ServerState::today();
+        if age.abs_diff(today) > REGISTRATION_AGE_SKEW_DAYS {
+            return Err(CredentialError::InvalidField(
+                String::from("age"),
+                format!(
+                    "issuance day {age} differs from local day {today} by more than {REGISTRATION_AGE_SKEW_DAYS} day(s)"
+                ),
+            ));
         }
+
+        // `measurement_count` is implicit (never transmitted); confirm the
+        // finalized credential carries the agreed initial value of zero.
+        let count = cred
+            .measurement_count
+            .as_ref()
+            .and_then(scalar_u32)
+            .ok_or_else(|| CredentialError::InvalidField(
+                String::from("measurement_count"),
+                String::from("missing or does not fit in u32"),
+            ))?;
+        if count != 0 {
+            return Err(CredentialError::InvalidField(
+                String::from("measurement_count"),
+                format!("expected 0 at issuance, got {count}"),
+            ));
+        }
+
+        self.credential = Some(cred);
+        Ok(())
     }
 }
 
@@ -150,6 +195,66 @@ mod tests {
     }
 
     #[test]
+    fn test_registration_rejects_wrong_age() {
+        let rng = &mut rand::thread_rng();
+        let server_state = ServerState::new(rng);
+        let mut user_state = UserState::new(server_state.public_parameters());
+        let (request, client_state) = user_state.request(rng).unwrap();
+
+        // A malicious server dates the credential far from today, tagging it.
+        let (reply, _issuer_cred) = open_registration::handle(
+            rng,
+            SESSION_ID,
+            request,
+            |UAC: &mut UserAuthCredential| {
+                UAC.set_keypair(server_state.sk.clone(), server_state.pp.clone());
+                UAC.measurement_count = Some(Scalar::ZERO);
+                UAC.age = Some((ServerState::today() - 42).into());
+                Ok(())
+            },
+            |_UAC: &UserAuthCredential| Ok(()),
+        )
+        .unwrap();
+
+        let result = user_state.handle_response(client_state, reply);
+        assert!(
+            matches!(result, Err(CredentialError::InvalidField(ref f, _)) if f == "age"),
+            "client must reject a credential not dated to its own day"
+        );
+        assert!(
+            user_state.credential.is_none(),
+            "rejected credential must not be stored"
+        );
+    }
+
+    #[test]
+    fn test_registration_accepts_skewed_age() {
+        // A server one day ahead of the client (clock skew, midnight
+        // crossing) must still be accepted.
+        let rng = &mut rand::thread_rng();
+        let server_state = ServerState::new(rng);
+        let mut user_state = UserState::new(server_state.public_parameters());
+        let (request, client_state) = user_state.request(rng).unwrap();
+
+        let (reply, _issuer_cred) = open_registration::handle(
+            rng,
+            SESSION_ID,
+            request,
+            |UAC: &mut UserAuthCredential| {
+                UAC.set_keypair(server_state.sk.clone(), server_state.pp.clone());
+                UAC.measurement_count = Some(Scalar::ZERO);
+                UAC.age = Some((ServerState::today() + 1).into());
+                Ok(())
+            },
+            |_UAC: &UserAuthCredential| Ok(()),
+        )
+        .unwrap();
+
+        assert!(user_state.handle_response(client_state, reply).is_ok());
+        assert!(user_state.credential.is_some());
+    }
+
+    #[test]
     fn test_handle_response() {
         // Test the handle_response function
         // This is a basic structure test since we need actual response data
@@ -167,3 +272,4 @@ mod tests {
         }
     }
 }
+
