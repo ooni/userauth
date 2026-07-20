@@ -1325,6 +1325,7 @@ dependencies = [
  "base64",
  "bincode",
  "cmz",
+ "criterion",
  "ooniauth-core",
  "pyo3",
  "pyo3-build-config 0.28.3",

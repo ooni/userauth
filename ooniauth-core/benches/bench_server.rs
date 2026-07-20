@@ -112,9 +112,10 @@ fn bench_hash(c: &mut Criterion) {
             // Measurement bodies are usually ~1mb
             let bytes = random_megabytes(1);
             bytes
-        }, |bytes|{
-            submit_measurement_hash(bytes.as_ref())
-        }, BatchSize::SmallInput);
+        },
+        |bytes| submit_measurement_hash(bytes.as_ref())
+        ,
+        BatchSize::SmallInput);
     });
 
 }
