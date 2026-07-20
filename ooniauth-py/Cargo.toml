@@ -28,3 +28,7 @@ criterion = {workspace = true}
 
 [build-dependencies]
 pyo3-build-config = "0.28.3"
+
+[[bench]]
+name = "bench_server"
+harness = false
