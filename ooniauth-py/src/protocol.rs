@@ -105,7 +105,7 @@ impl ServerState {
         registration_request: Py<PyString>,
     ) -> OoniResult<Py<PyString>> {
         let req = from_pystring(py, &registration_request)?;
-        let reply = self.state.open_registration(req)?;
+        let reply = py.detach(|| self.state.open_registration(req))?;
         let result = to_pystring(py, &reply);
         Ok(result)
     }
@@ -171,7 +171,9 @@ impl ServerState {
         min_measurement_count: u32,
     ) -> OoniResult<Py<PyString>> {
         let measurement_str = py_string_arg(py, &measurement, "measurement")?;
-        let measurement_hash = core_submit_measurement_hash(measurement_str.as_bytes());
+        let measurement_hash = py.detach(|| {
+           core_submit_measurement_hash(measurement_str.as_bytes())
+        });
 
         self.handle_submit_request_impl(
             py,
@@ -196,8 +198,10 @@ impl ServerState {
         let old_sk = from_pystring::<SecretKey>(py, &old_secret_key)?;
         let old_pp = from_pystring::<PublicParameters>(py, &old_public_params)?;
 
-        let mut rng = rand::thread_rng();
-        let resp = self.state.handle_update(&mut rng, req, &old_sk, &old_pp)?;
+        let resp = py.detach(|| {
+            let mut rng = rand::thread_rng();
+            self.state.handle_update(&mut rng, req, &old_sk, &old_pp)
+        })?;
 
         Ok(to_pystring(py, &resp))
     }
@@ -223,17 +227,19 @@ impl ServerState {
         let probe_cc = py_string_arg(py, &probe_cc, "probe_cc")?;
         let probe_asn = py_string_arg(py, &probe_asn, "probe_asn")?;
 
-        let mut rng = rand::thread_rng();
-        let result = self.state.handle_submit(
-            &mut rng,
-            request,
-            &nym,
-            probe_cc,
-            probe_asn,
-            measurement_hash,
-            age_range.0..age_range.1,
-            min_measurement_count..u32::MAX,
-        )?;
+        let result = py.detach(||{
+            let mut rng = rand::thread_rng();
+            self.state.handle_submit(
+                        &mut rng,
+                        request,
+                        &nym,
+                        probe_cc,
+                        probe_asn,
+                        measurement_hash,
+                        age_range.0..age_range.1,
+                        min_measurement_count..u32::MAX,
+                    )
+        })?;
 
         Ok(to_pystring(py, &result))
     }
@@ -283,14 +289,13 @@ impl UserState {
     }
 
     pub fn make_registration_request(&mut self, py: Python<'_>) -> OoniResult<Py<PyString>> {
-        let mut rng = rand::thread_rng();
-
-        let (req, state) = self.state.request(&mut rng)?;
-
-        self.registration_client_state = Some(state);
-
-        let result = to_pystring(py, &req);
-        Ok(result)
+        let req = py.detach(|| -> OoniResult<_> {
+            let mut rng = rand::thread_rng();
+            let (req, state) = self.state.request(&mut rng)?;
+            self.registration_client_state = Some(state);
+            Ok(req)
+        })?;
+        Ok(to_pystring(py, &req))
     }
 
     /// Handle a registration response sent by the server, updating your credentials
@@ -309,7 +314,7 @@ impl UserState {
                     Did you forget to call `make_registration_request` before?",
         );
 
-        self.state.handle_response(client_state, response)?;
+        py.detach(||self.state.handle_response(client_state, response))?;
 
         Ok(())
     }
@@ -360,7 +365,7 @@ impl UserState {
         min_measurement_count: u32,
     ) -> OoniResult<SubmitRequest> {
         let measurement_str = py_string_arg(py, &measurement, "measurement")?;
-        let measurement_hash = core_submit_measurement_hash(measurement_str.as_bytes());
+        let measurement_hash = py.detach(||core_submit_measurement_hash(measurement_str.as_bytes()));
 
         self.make_submit_request_impl(
             py,
@@ -388,15 +393,18 @@ impl UserState {
                     Did you forget to call `make_submit_request` before?",
         );
 
-        self.state.handle_submit_response(submit_state, response)?;
+        py.detach(||self.state.handle_submit_response(submit_state, response))?;
 
         Ok(())
     }
 
     /// Creates a credential update request to be sent to the server.
     pub fn make_credential_update_request(&mut self, py: Python<'_>) -> OoniResult<Py<PyString>> {
-        let mut rng = rand::thread_rng();
-        let (request, new_state) = self.state.update_request(&mut rng)?;
+        let (request, new_state) = py.detach(|| {
+            let mut rng = rand::thread_rng();
+            self.state.update_request(&mut rng)
+        })?;
+
         self.update_client_state = Some(new_state);
 
         Ok(to_pystring(py, &request))
@@ -417,7 +425,7 @@ impl UserState {
                     Did you forget to call `make_submit_request` before?",
         );
 
-        self.state.handle_update_response(update_state, response)?;
+        py.detach(|| self.state.handle_update_response(update_state, response))?;
 
         Ok(())
     }
@@ -437,15 +445,17 @@ impl UserState {
         let probe_cc = py_string_arg(py, &probe_cc, "probe_cc")?;
         let probe_asn = py_string_arg(py, &probe_asn, "probe_asn")?;
 
-        let mut rng = rand::thread_rng();
-        let ((result, client_state), nym) = self.state.submit_request(
-            &mut rng,
-            probe_cc.into(),
-            probe_asn.into(),
-            measurement_hash,
-            age_range.0..age_range.1,
-            min_measurement_count..u32::MAX,
-        )?;
+        let ((result, client_state), nym) = py.detach(||{
+            let mut rng = rand::thread_rng();
+            self.state.submit_request(
+                        &mut rng,
+                        probe_cc.into(),
+                        probe_asn.into(),
+                        measurement_hash,
+                        age_range.0..age_range.1,
+                        min_measurement_count..u32::MAX,
+                    )
+        })?;
 
         self.submit_client_state = Some(client_state);
 
