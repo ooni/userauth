@@ -91,15 +91,15 @@ impl ServerState {
         })
     }
 
-    fn get_secret_key(&self, py: Python<'_>) -> Py<PyString> {
+    pub fn get_secret_key(&self, py: Python<'_>) -> Py<PyString> {
         to_pystring(py, self.state.secret_key_ref())
     }
 
-    fn get_public_parameters(&self, py: Python<'_>) -> Py<PyString> {
+    pub fn get_public_parameters(&self, py: Python<'_>) -> Py<PyString> {
         to_pystring(py, self.state.public_parameters_ref())
     }
 
-    fn handle_registration_request(
+    pub fn handle_registration_request(
         &self,
         py: Python<'_>,
         registration_request: Py<PyString>,
@@ -111,7 +111,7 @@ impl ServerState {
     }
 
     #[staticmethod]
-    fn today() -> u32 {
+    pub fn today() -> u32 {
         ooni::ServerState::today()
     }
 
@@ -159,7 +159,7 @@ impl ServerState {
     /// measurement. Computes the hash internally using the
     /// [submit_measurement_hash] function.
     #[allow(clippy::too_many_arguments)]
-    fn handle_submit_request_with_hash(
+    pub fn handle_submit_request_with_hash(
         &self,
         py: Python<'_>,
         nym: Py<PyString>,
@@ -460,9 +460,9 @@ impl UserState {
 #[pyclass]
 pub struct SubmitRequest {
     #[pyo3(get)]
-    nym: Py<PyString>,
+    pub nym: Py<PyString>,
     #[pyo3(get)]
-    request: Py<PyString>,
+    pub request: Py<PyString>,
 }
 
 #[cfg(test)]
