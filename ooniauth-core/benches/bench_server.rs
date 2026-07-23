@@ -110,11 +110,9 @@ fn bench_hash(c: &mut Criterion) {
     c.bench_function("submit_measurement_hash", |b|{
         b.iter_batched(|| {
             // Measurement bodies are usually ~1mb
-            let bytes = random_megabytes(1);
-            bytes
+            random_megabytes(1)
         },
-        |bytes| submit_measurement_hash(bytes.as_ref())
-        ,
+        |bytes| submit_measurement_hash(bytes.as_ref()),
         BatchSize::SmallInput);
     });
 

@@ -25,6 +25,7 @@ base64 = "0.22.1"
 
 [dev-dependencies]
 criterion = {workspace = true}
+pprof = { version = "0.13", features = ["flamegraph", "criterion"] }
 
 [build-dependencies]
 pyo3-build-config = "0.28.3"

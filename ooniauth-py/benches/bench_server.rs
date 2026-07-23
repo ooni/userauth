@@ -2,6 +2,7 @@ use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
 use ooniauth_py::{ServerState, UserState};
 use pyo3::{Py, Python, types::PyString};
 use rand::{distributions::Alphanumeric, Rng};
+use pprof::criterion::{Output, PProfProfiler};
 
 fn random_ascii_string_mb(mb: usize) -> String {
     let byte_count = mb * 1024 * 1024;
@@ -62,5 +63,10 @@ fn bench_submit(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_submit);
+criterion_group!{
+    name = benches;
+    config = Criterion::default().with_profiler(PProfProfiler::new(100, Output::Flamegraph(None)));
+    targets = bench_submit
+}
+
 criterion_main!(benches);
