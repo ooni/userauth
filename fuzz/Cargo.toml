@@ -1,0 +1,37 @@
+[package]
+name = "ooniauth-core-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+bincode = {workspace=true}
+rand = "0.8"
+
+[dependencies.ooniauth-core]
+path = "../ooniauth-core"
+
+[[bin]]
+name = "submit_handle"
+path = "fuzz_targets/submit_handle.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "registration_open"
+path = "fuzz_targets/registration_open.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "update_handle"
+path = "fuzz_targets/update_handle.rs"
+test = false
+doc = false
+bench = false
