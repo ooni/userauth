@@ -1,5 +1,8 @@
 # OONI User Auth
 
+See the [specification](https://github.com/ooni/spec/blob/master/backends/bk-006-anon-creds.md)
+and the [academic paper](https://eprint.iacr.org/2026/794) for details and benchmarks.
+
 Run example:
 ```bash
 cargo run -p ooniauth-core --release --example basic_usage
