@@ -1,8 +1,7 @@
 [workspace]
 members = [
     "ooniauth-core",
-    "ooniauth-py",
-    "ooniauth-ffi"
+    "ooniauth-py"
 ]
 default-members = ["ooniauth-core"]
 resolver = "2"
