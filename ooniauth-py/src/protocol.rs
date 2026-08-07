@@ -57,7 +57,7 @@ pub fn submit_measurement_hash(measurement: &str) -> String {
 }
 
 #[gen_stub_pyclass]
-#[pyclass]
+#[pyclass(frozen)]
 pub struct ServerState {
     pub state: ooni::ServerState,
 }
