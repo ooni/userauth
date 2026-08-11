@@ -74,8 +74,7 @@ impl UserState {
         rep: open_registration::Reply,
     ) -> Result<(), CredentialError> {
         trace!("Handling registration response");
-        let replybytes = rep.as_bytes();
-        let recvreply = open_registration::Reply::try_from(&replybytes[..]).unwrap();
+        let recvreply = rep.clone();
         let cred = state
             .finalize(recvreply)
             .map_err(|_| CredentialError::CMZError(CMZError::IssProofFailed))?;

@@ -45,8 +45,7 @@ impl UserState {
         state: update::ClientState,
         rep: update::Reply,
     ) -> Result<(), CMZError> {
-        let replybytes = rep.as_bytes();
-        let recvreply = update::Reply::try_from(&replybytes[..]).unwrap();
+        let recvreply = rep.clone();
         match state.finalize(recvreply) {
             Ok(cred) => {
                 self.credential = Some(cred);
