@@ -10,6 +10,7 @@ resolver = "2"
 [workspace.dependencies]
 rand = "0.8.5"
 bincode = "1"
+postcard = { version = "1", default-features = false, features = ["use-std"] }
 cmz = "0.2"
 serde = "1.0.219"
 thiserror = "2.0.12"

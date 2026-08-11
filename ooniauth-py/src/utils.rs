@@ -8,7 +8,7 @@ pub fn to_pystring<T: serde::Serialize>(py: Python<'_>, value: &T) -> Py<PyStrin
     // We consider a bad serialization as a programming error since most of the times
     // we want to serialize a structure made by us that should be well-formed
     let bytes =
-        bincode::serialize(&value).unwrap_or_else(|e| panic!("Could not serialize value: {e}"));
+        postcard::to_allocvec(value).unwrap_or_else(|e| panic!("Could not serialize value: {e}"));
     PyString::new(py, &BASE64_STANDARD.encode(bytes)).into()
 }
 
@@ -20,7 +20,7 @@ pub fn from_pystring<T: serde::de::DeserializeOwned>(
     // what we are deserializing comes from the user in python world
     let s = to_dser_err(py_string.to_str(py))?;
     let bytes = to_dser_err(BASE64_STANDARD.decode(s))?;
-    let result = bincode::deserialize::<T>(bytes.as_ref());
+    let result = postcard::from_bytes::<T>(bytes.as_ref());
     to_dser_err(result)
 }
 

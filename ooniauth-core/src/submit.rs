@@ -63,7 +63,7 @@ pub struct SubmitRequest {
 
 impl SubmitRequest {
     pub fn as_bytes(&self) -> Vec<u8> {
-        bincode::serialize(self).expect("failed to serialize SubmitRequest")
+        postcard::to_allocvec(self).expect("failed to serialize SubmitRequest")
     }
 }
 

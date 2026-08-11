@@ -506,7 +506,7 @@ mod tests {
         let req_bin = req.as_bytes();
         let req_str = BASE64_STANDARD.encode(req_bin);
         let req_bin = BASE64_STANDARD.decode(req_str).unwrap();
-        let req = bincode::deserialize::<Request>(&req_bin).unwrap();
+        let req = Request::try_from(&req_bin[..]).unwrap();
         assert!(server.open_registration(req).is_ok());
     }
 
