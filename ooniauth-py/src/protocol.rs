@@ -57,7 +57,7 @@ pub fn submit_measurement_hash(measurement: &str) -> String {
 }
 
 #[gen_stub_pyclass]
-#[pyclass]
+#[pyclass(frozen)]
 pub struct ServerState {
     pub state: ooni::ServerState,
 }
@@ -171,9 +171,8 @@ impl ServerState {
         min_measurement_count: u32,
     ) -> OoniResult<Py<PyString>> {
         let measurement_str = py_string_arg(py, &measurement, "measurement")?;
-        let measurement_hash = py.detach(|| {
-           core_submit_measurement_hash(measurement_str.as_bytes())
-        });
+        let measurement_hash =
+            py.detach(|| core_submit_measurement_hash(measurement_str.as_bytes()));
 
         self.handle_submit_request_impl(
             py,
@@ -227,18 +226,18 @@ impl ServerState {
         let probe_cc = py_string_arg(py, &probe_cc, "probe_cc")?;
         let probe_asn = py_string_arg(py, &probe_asn, "probe_asn")?;
 
-        let result = py.detach(||{
+        let result = py.detach(|| {
             let mut rng = rand::thread_rng();
             self.state.handle_submit(
-                        &mut rng,
-                        request,
-                        &nym,
-                        probe_cc,
-                        probe_asn,
-                        measurement_hash,
-                        age_range.0..age_range.1,
-                        min_measurement_count..u32::MAX,
-                    )
+                &mut rng,
+                request,
+                &nym,
+                probe_cc,
+                probe_asn,
+                measurement_hash,
+                age_range.0..age_range.1,
+                min_measurement_count..u32::MAX,
+            )
         })?;
 
         Ok(to_pystring(py, &result))
@@ -314,7 +313,7 @@ impl UserState {
                     Did you forget to call `make_registration_request` before?",
         );
 
-        py.detach(||self.state.handle_response(client_state, response))?;
+        py.detach(|| self.state.handle_response(client_state, response))?;
 
         Ok(())
     }
@@ -365,7 +364,8 @@ impl UserState {
         min_measurement_count: u32,
     ) -> OoniResult<SubmitRequest> {
         let measurement_str = py_string_arg(py, &measurement, "measurement")?;
-        let measurement_hash = py.detach(||core_submit_measurement_hash(measurement_str.as_bytes()));
+        let measurement_hash =
+            py.detach(|| core_submit_measurement_hash(measurement_str.as_bytes()));
 
         self.make_submit_request_impl(
             py,
@@ -393,7 +393,7 @@ impl UserState {
                     Did you forget to call `make_submit_request` before?",
         );
 
-        py.detach(||self.state.handle_submit_response(submit_state, response))?;
+        py.detach(|| self.state.handle_submit_response(submit_state, response))?;
 
         Ok(())
     }
@@ -445,16 +445,16 @@ impl UserState {
         let probe_cc = py_string_arg(py, &probe_cc, "probe_cc")?;
         let probe_asn = py_string_arg(py, &probe_asn, "probe_asn")?;
 
-        let ((result, client_state), nym) = py.detach(||{
+        let ((result, client_state), nym) = py.detach(|| {
             let mut rng = rand::thread_rng();
             self.state.submit_request(
-                        &mut rng,
-                        probe_cc.into(),
-                        probe_asn.into(),
-                        measurement_hash,
-                        age_range.0..age_range.1,
-                        min_measurement_count..u32::MAX,
-                    )
+                &mut rng,
+                probe_cc.into(),
+                probe_asn.into(),
+                measurement_hash,
+                age_range.0..age_range.1,
+                min_measurement_count..u32::MAX,
+            )
         })?;
 
         self.submit_client_state = Some(client_state);
