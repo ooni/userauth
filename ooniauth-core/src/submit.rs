@@ -1,10 +1,13 @@
+// The published CMZ macros generate redundant rand 0.10 trait bounds.
+#![allow(clippy::implied_bounds_in_impls)]
+
 use super::{scalar_u32, ServerState, UserState, G};
 use crate::errors::CredentialError;
 use crate::registration::UserAuthCredential;
 use cmz::*;
 use curve25519_dalek::RistrettoPoint;
 use group::Group;
-use rand::{CryptoRng, RngCore};
+use rand::{CryptoRng, Rng};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256, Sha512};
 use tracing::{debug, instrument, trace};
@@ -110,7 +113,7 @@ impl UserState {
     ))]
     pub fn submit_request(
         &self,
-        rng: &mut (impl RngCore + CryptoRng),
+        rng: &mut impl CryptoRng,
         probe_cc: String,
         probe_asn: String,
         measurement_hash: &MeasurementHash,
@@ -118,8 +121,6 @@ impl UserState {
         measurement_count_range: std::ops::Range<u32>,
     ) -> Result<((SubmitRequest, submit::ClientState), [u8; 32]), CredentialError> {
         trace!("Starting submit request");
-        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
-
         // Get the current credential
         let Old = self
             .credential
@@ -252,7 +253,7 @@ impl ServerState {
     ))]
     pub fn handle_submit(
         &self,
-        rng: &mut (impl RngCore + CryptoRng),
+        rng: &mut impl CryptoRng,
         req: SubmitRequest,
         probe_id: &[u8; 32],
         probe_cc: &str,
@@ -357,7 +358,7 @@ mod tests {
 
     #[test]
     fn test_submit_request() {
-        let rng = &mut rand::thread_rng();
+        let rng = &mut rand::rng();
 
         // Setup server and user
         let server_state = ServerState::new(rng);
@@ -455,7 +456,7 @@ mod tests {
 
     #[test]
     fn test_submit_request_rejects_replaced_measurement() {
-        let rng = &mut rand::thread_rng();
+        let rng = &mut rand::rng();
 
         let server_state = ServerState::new(rng);
         let mut user_state = UserState::new(server_state.public_parameters());

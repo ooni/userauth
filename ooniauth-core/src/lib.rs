@@ -6,10 +6,9 @@ use cmz::*;
 use curve25519_dalek::ristretto::RistrettoPoint as G;
 use group::Group;
 type Scalar = <G as Group>::Scalar;
-use rand::{CryptoRng, RngCore};
+use rand::CryptoRng;
 use registration::UserAuthCredential;
 use serde::{Deserialize, Serialize};
-use sha2::Sha512;
 use subtle::ConstantTimeEq;
 pub mod errors;
 pub mod registration;
@@ -36,9 +35,7 @@ pub struct UserState {
 }
 
 impl ServerState {
-    pub fn new(rng: &mut (impl RngCore + CryptoRng)) -> Self {
-        // Initialization
-        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
+    pub fn new(rng: &mut impl CryptoRng) -> Self {
         // Create the private key and public parameters for each of the types of
         // credential with 'true' to indicate uCMZ
         let (sk, pp) = UserAuthCredential::gen_keys(rng, true);
@@ -75,8 +72,6 @@ impl ServerState {
 
 impl UserState {
     pub fn new(pp: CMZPubkey<G>) -> Self {
-        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
-
         Self {
             pp,
             credential: None,

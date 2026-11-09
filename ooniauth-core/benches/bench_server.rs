@@ -1,9 +1,9 @@
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
-use ooniauth_core::{ServerState, UserState};
 use ooniauth_core::submit::submit_measurement_hash;
-use rand::{rngs::ThreadRng, thread_rng};
+use ooniauth_core::{ServerState, UserState};
+use rand::Rng;
+use rand::{rng as thread_rng, rngs::ThreadRng};
 use std::hint::black_box;
-use rand::RngCore;
 
 fn setup() -> (ThreadRng, UserState, ServerState) {
     let mut rng = thread_rng();
@@ -16,7 +16,7 @@ fn setup() -> (ThreadRng, UserState, ServerState) {
 
 fn random_megabytes(mb: usize) -> Vec<u8> {
     let mut buf = vec![0u8; mb * 1024 * 1024];
-    rand::thread_rng().fill_bytes(&mut buf);
+    rand::rng().fill_bytes(&mut buf);
     buf
 }
 
@@ -107,16 +107,23 @@ fn bench_update(c: &mut Criterion) {
 }
 
 fn bench_hash(c: &mut Criterion) {
-    c.bench_function("submit_measurement_hash", |b|{
-        b.iter_batched(|| {
-            // Measurement bodies are usually ~1mb
-            random_megabytes(1)
-        },
-        |bytes| submit_measurement_hash(bytes.as_ref()),
-        BatchSize::SmallInput);
+    c.bench_function("submit_measurement_hash", |b| {
+        b.iter_batched(
+            || {
+                // Measurement bodies are usually ~1mb
+                random_megabytes(1)
+            },
+            |bytes| submit_measurement_hash(bytes.as_ref()),
+            BatchSize::SmallInput,
+        );
     });
-
 }
 
-criterion_group!(benches, bench_registration, bench_submit, bench_update, bench_hash);
+criterion_group!(
+    benches,
+    bench_registration,
+    bench_submit,
+    bench_update,
+    bench_hash
+);
 criterion_main!(benches);

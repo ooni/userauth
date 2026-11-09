@@ -1,3 +1,6 @@
+// The published CMZ macros generate redundant rand 0.10 trait bounds.
+#![allow(clippy::implied_bounds_in_impls)]
+
 /* A module for the protocol for the user to register with the OONI Authority (OA)
  * to receive their initial User Auth Credential
  * The credential will have attributes:
@@ -11,8 +14,7 @@ use super::{ServerState, UserState};
 use crate::errors::CredentialError;
 use cmz::*;
 use group::Group;
-use rand::{CryptoRng, RngCore};
-use sha2::Sha512;
+use rand::{CryptoRng, Rng};
 use tracing::{instrument, trace};
 
 const SESSION_ID: &[u8] = b"ooni.org/userauth/v1/reg";
@@ -50,11 +52,9 @@ impl UserState {
     #[instrument(skip(self, rng))]
     pub fn request(
         &self,
-        rng: &mut (impl RngCore + CryptoRng),
+        rng: &mut impl CryptoRng,
     ) -> Result<(open_registration::Request, open_registration::ClientState), CMZError> {
         trace!("Starting registration request");
-        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
-
         let mut UAC = UserAuthCredential::using_pubkey(&self.pp);
         // For registration, age and measurement_count will be set by the server
         // But we need to provide some initial values for the protocol
@@ -84,14 +84,12 @@ impl UserState {
         // credential for later anonymity-set partitioning (or delayed denial
         // of service via the submission age range). Accept only a credential
         // dated to the client's own day, within clock-skew tolerance.
-        let age = cred
-            .age
-            .as_ref()
-            .and_then(scalar_u32)
-            .ok_or_else(|| CredentialError::InvalidField(
+        let age = cred.age.as_ref().and_then(scalar_u32).ok_or_else(|| {
+            CredentialError::InvalidField(
                 String::from("age"),
                 String::from("missing or does not fit in u32"),
-            ))?;
+            )
+        })?;
         let today = ServerState::today();
         if age.abs_diff(today) > REGISTRATION_AGE_SKEW_DAYS {
             return Err(CredentialError::InvalidField(
@@ -108,10 +106,12 @@ impl UserState {
             .measurement_count
             .as_ref()
             .and_then(scalar_u32)
-            .ok_or_else(|| CredentialError::InvalidField(
-                String::from("measurement_count"),
-                String::from("missing or does not fit in u32"),
-            ))?;
+            .ok_or_else(|| {
+                CredentialError::InvalidField(
+                    String::from("measurement_count"),
+                    String::from("missing or does not fit in u32"),
+                )
+            })?;
         if count != 0 {
             return Err(CredentialError::InvalidField(
                 String::from("measurement_count"),
@@ -131,7 +131,7 @@ impl ServerState {
         req: open_registration::Request,
     ) -> Result<open_registration::Reply, CMZError> {
         trace!("Server opening registration");
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let reqbytes = req.as_bytes();
 
         let recvreq = open_registration::Request::try_from(&reqbytes[..]).unwrap();
@@ -159,10 +159,8 @@ mod tests {
 
     #[test]
     fn test_registration() {
-        let rng = &mut rand::thread_rng();
-        // Initialize group first for gen_keys
+        let rng = &mut rand::rng();
         let server_state = ServerState::new(rng);
-        // Note: request() will call cmz_group_init again, but that's okay
         let mut user_state = UserState::new(server_state.public_parameters());
 
         let result = user_state.request(rng);
@@ -195,7 +193,7 @@ mod tests {
 
     #[test]
     fn test_registration_rejects_wrong_age() {
-        let rng = &mut rand::thread_rng();
+        let rng = &mut rand::rng();
         let server_state = ServerState::new(rng);
         let mut user_state = UserState::new(server_state.public_parameters());
         let (request, client_state) = user_state.request(rng).unwrap();
@@ -230,7 +228,7 @@ mod tests {
     fn test_registration_accepts_skewed_age() {
         // A server one day ahead of the client (clock skew, midnight
         // crossing) must still be accepted.
-        let rng = &mut rand::thread_rng();
+        let rng = &mut rand::rng();
         let server_state = ServerState::new(rng);
         let mut user_state = UserState::new(server_state.public_parameters());
         let (request, client_state) = user_state.request(rng).unwrap();
@@ -259,7 +257,7 @@ mod tests {
         // This is a basic structure test since we need actual response data
         // TODO: Add full integration test when server implementation is ready
 
-        let rng = &mut rand::thread_rng();
+        let rng = &mut rand::rng();
         let server_state = ServerState::new(rng);
         let user_state = UserState::new(server_state.public_parameters());
 

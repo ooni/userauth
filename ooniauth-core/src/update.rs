@@ -1,10 +1,12 @@
-use super::{PublicParameters, SecretKey, ServerState, UserState, G};
+// The published CMZ macros generate redundant rand 0.10 trait bounds.
+#![allow(clippy::implied_bounds_in_impls)]
+
+use super::{PublicParameters, SecretKey, ServerState, UserState};
 use crate::errors::CredentialError;
 use crate::registration::UserAuthCredential;
 use cmz::*;
 use group::Group;
-use rand::{CryptoRng, RngCore};
-use sha2::Sha512;
+use rand::{CryptoRng, Rng};
 
 const SESSION_ID: &[u8] = b"ooni.org/userauth/v1/upd";
 
@@ -19,10 +21,8 @@ muCMZProtocol!(update,
 impl UserState {
     pub fn update_request(
         &self,
-        rng: &mut (impl RngCore + CryptoRng),
+        rng: &mut impl CryptoRng,
     ) -> Result<(update::Request, update::ClientState), CredentialError> {
-        cmz_group_init(G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
-
         let old = self
             .credential
             .as_ref()
@@ -59,7 +59,7 @@ impl UserState {
 impl ServerState {
     pub fn handle_update(
         &self,
-        rng: &mut (impl RngCore + CryptoRng),
+        rng: &mut impl CryptoRng,
         req: update::Request,
         old_sk: &SecretKey,
         old_pp: &PublicParameters,
@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     fn test_update() {
-        let rng = &mut rand::thread_rng();
+        let rng = &mut rand::rng();
 
         // Issue an initial credential under the old key material.
         let old_server_state = ServerState::new(rng);

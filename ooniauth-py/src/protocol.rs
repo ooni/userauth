@@ -68,7 +68,7 @@ pub struct ServerState {
 impl ServerState {
     #[new]
     pub fn new() -> Self {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         Self {
             state: ooni::ServerState::new(&mut rng),
         }
@@ -198,7 +198,7 @@ impl ServerState {
         let old_pp = from_pystring::<PublicParameters>(py, &old_public_params)?;
 
         let resp = py.detach(|| {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             self.state.handle_update(&mut rng, req, &old_sk, &old_pp)
         })?;
 
@@ -227,7 +227,7 @@ impl ServerState {
         let probe_asn = py_string_arg(py, &probe_asn, "probe_asn")?;
 
         let result = py.detach(|| {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             self.state.handle_submit(
                 &mut rng,
                 request,
@@ -289,7 +289,7 @@ impl UserState {
 
     pub fn make_registration_request(&mut self, py: Python<'_>) -> OoniResult<Py<PyString>> {
         let req = py.detach(|| -> OoniResult<_> {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let (req, state) = self.state.request(&mut rng)?;
             self.registration_client_state = Some(state);
             Ok(req)
@@ -401,7 +401,7 @@ impl UserState {
     /// Creates a credential update request to be sent to the server.
     pub fn make_credential_update_request(&mut self, py: Python<'_>) -> OoniResult<Py<PyString>> {
         let (request, new_state) = py.detach(|| {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             self.state.update_request(&mut rng)
         })?;
 
@@ -446,7 +446,7 @@ impl UserState {
         let probe_asn = py_string_arg(py, &probe_asn, "probe_asn")?;
 
         let ((result, client_state), nym) = py.detach(|| {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             self.state.submit_request(
                 &mut rng,
                 probe_cc.into(),
@@ -481,7 +481,7 @@ mod tests {
     use base64::{prelude::BASE64_STANDARD, Engine};
     use ooniauth_core::{registration::open_registration::Request, ServerState, UserState};
     use pyo3::{types::PyString, Py, Python};
-    use rand::{rngs::ThreadRng, thread_rng};
+    use rand::{rng as thread_rng, rngs::ThreadRng};
 
     fn test_measurement_hash(py: Python<'_>, value: u8) -> Py<PyString> {
         PyString::new(py, &BASE64_STANDARD.encode([value; 32])).into()
@@ -503,7 +503,7 @@ mod tests {
         // Check that the string encoding still let us verify
         let (mut rng, client, server) = setup();
         let (req, _state) = client.request(&mut rng).unwrap();
-        let req_bin = req.as_bytes();
+        let req_bin = bincode::serialize(&req).unwrap();
         let req_str = BASE64_STANDARD.encode(req_bin);
         let req_bin = BASE64_STANDARD.decode(req_str).unwrap();
         let req = bincode::deserialize::<Request>(&req_bin).unwrap();
@@ -762,9 +762,7 @@ mod tests {
         });
     }
 
-    fn submit_fixture(
-        py: Python<'_>,
-    ) -> (
+    type SubmitFixture = (
         crate::ServerState,
         crate::SubmitRequest,
         Py<PyString>,
@@ -772,7 +770,9 @@ mod tests {
         Py<PyString>,
         (u32, u32),
         u32,
-    ) {
+    );
+
+    fn submit_fixture(py: Python<'_>) -> SubmitFixture {
         let server = crate::ServerState::new();
         let mut client = crate::UserState::new(py, server.get_public_parameters(py)).unwrap();
         let req = client.make_registration_request(py).unwrap();

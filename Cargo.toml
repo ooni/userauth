@@ -8,9 +8,18 @@ resolver = "2"
 
 
 [workspace.dependencies]
-rand = "0.8.5"
+rand = "0.10"
 bincode = "1"
-cmz = "0.2"
+cmz = "0.3"
 serde = "1.0.219"
 thiserror = "2.0.12"
 criterion = { version = "0.5"}
+
+# Use the published mu/draft-v3 branches; Cargo.lock records the revisions.
+[patch.crates-io]
+cmz = { git = "https://git-crysp.uwaterloo.ca/SigmaProtocol/cmz", branch = "mu/draft-v3" }
+cmz-derive = { git = "https://git-crysp.uwaterloo.ca/SigmaProtocol/cmz", branch = "mu/draft-v3" }
+cmz-core = { git = "https://git-crysp.uwaterloo.ca/SigmaProtocol/cmz", branch = "mu/draft-v3" }
+sigma-compiler = { git = "https://git-crysp.uwaterloo.ca/SigmaProtocol/sigma-compiler", branch = "mu/draft-v3" }
+sigma-compiler-derive = { git = "https://git-crysp.uwaterloo.ca/SigmaProtocol/sigma-compiler", branch = "mu/draft-v3" }
+sigma-compiler-core = { git = "https://git-crysp.uwaterloo.ca/SigmaProtocol/sigma-compiler", branch = "mu/draft-v3" }

@@ -18,7 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(env_filter)
         .with(ForestLayer::default())
         .init();
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     println!("=== Anonymous Credential Example ===\n");
 

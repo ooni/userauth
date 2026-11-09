@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
 use ooniauth_core::{ServerState, UserState};
-use rand::thread_rng;
+use rand::rng as thread_rng;
 use std::hint::black_box;
 
 fn bench_user_request(c: &mut Criterion) {

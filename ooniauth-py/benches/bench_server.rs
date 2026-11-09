@@ -2,11 +2,11 @@ use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
 use ooniauth_py::{ServerState, UserState};
 use pprof::criterion::{Output, PProfProfiler};
 use pyo3::{types::PyString, Py, Python};
-use rand::{distributions::Alphanumeric, Rng};
+use rand::{distr::Alphanumeric, RngExt};
 
 fn random_ascii_string_mb(mb: usize) -> String {
     let byte_count = mb * 1024 * 1024;
-    rand::thread_rng()
+    rand::rng()
         .sample_iter(&Alphanumeric)
         .take(byte_count)
         .map(char::from)
