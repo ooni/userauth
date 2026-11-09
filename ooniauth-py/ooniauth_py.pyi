@@ -97,6 +97,13 @@ class SubmitRequest:
 class UserState:
     def __new__(cls, public_params: str) -> UserState: ...
     def get_credential(self) -> typing.Optional[str]: ...
+    def load_legacy_credential(self, credential: str) -> None:
+        r"""
+        Restore a base64-encoded client credential saved with CMZ 0.2 / bincode 1.
+        The credential must match this user's public parameters. On failure,
+        the current credential is unchanged. Its MAC is checked on submission.
+        """
+
     def set_public_params(self, new_public_params: str) -> None: ...
     def make_registration_request(self) -> str: ...
     def handle_registration_response(self, resp: str) -> None:

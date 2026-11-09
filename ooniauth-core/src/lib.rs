@@ -9,14 +9,27 @@ type Scalar = <G as Group>::Scalar;
 use rand::CryptoRng;
 use registration::UserAuthCredential;
 use serde::{Deserialize, Serialize};
+use sha2::Sha512;
 use subtle::ConstantTimeEq;
 pub mod errors;
+mod legacy;
 pub mod registration;
 pub mod submit;
 pub mod update;
 
 /// Version of this crate (`ooniauth-core`), from `Cargo.toml`.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// Install UserAuth's original CMZ generator `A`.
+///
+/// CMZ 0.3 derives `A` from the standard generator by hash-to-group, which
+/// would invalidate every key and credential issued so far. Keep the generator
+/// this deployment has always used; `cmz_group_init_with` must run before the
+/// first CMZ operation for `G`, so every entry point below calls it (later
+/// calls keep the already-loaded value).
+pub(crate) fn cmz_init() {
+    cmz_group_init_with(|| G::hash_from_bytes::<Sha512>(b"CMZ Generator A"));
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ServerState {
@@ -36,6 +49,7 @@ pub struct UserState {
 
 impl ServerState {
     pub fn new(rng: &mut impl CryptoRng) -> Self {
+        cmz_init();
         // Create the private key and public parameters for each of the types of
         // credential with 'true' to indicate uCMZ
         let (sk, pp) = UserAuthCredential::gen_keys(rng, true);
@@ -51,6 +65,7 @@ impl ServerState {
     }
 
     pub fn from_creds(sk: SecretKey, pp: PublicParameters) -> Self {
+        cmz_init();
         Self { sk, pp }
     }
 
@@ -72,6 +87,7 @@ impl ServerState {
 
 impl UserState {
     pub fn new(pp: CMZPubkey<G>) -> Self {
+        cmz_init();
         Self {
             pp,
             credential: None,

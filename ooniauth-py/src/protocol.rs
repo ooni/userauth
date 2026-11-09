@@ -277,6 +277,23 @@ impl UserState {
         self.state.get_credential().map(|c| to_pystring(py, c))
     }
 
+    /// Restore a base64-encoded client credential saved with CMZ 0.2 / bincode 1.
+    /// The credential must match this user's public parameters. On failure,
+    /// the current credential is unchanged. Its MAC is checked on submission.
+    pub fn load_legacy_credential(
+        &mut self,
+        py: Python<'_>,
+        credential: Py<PyString>,
+    ) -> OoniResult<()> {
+        let bytes = BASE64_STANDARD
+            .decode(py_string_arg(py, &credential, "credential")?)
+            .map_err(|e| OoniErr::DeserializationFailed {
+                reason: e.to_string(),
+            })?;
+        py.detach(|| self.state.load_legacy_credential(&bytes))?;
+        Ok(())
+    }
+
     pub fn set_public_params(
         &mut self,
         py: Python<'_>,
