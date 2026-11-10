@@ -371,8 +371,9 @@ checksum = "0c9ea0ac24bc397ab3c98583a3c9ba74fa56b09a4449bbe172b9b1ddb016027a"
 
 [[package]]
 name = "cmz"
-version = "0.3.0"
-source = "git+https://git-crysp.uwaterloo.ca/SigmaProtocol/cmz?branch=mu%2Fdraft-v3#5e7b23a75b9519b3697face63cb465969fbb56de"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "21bfd4ce3415af3f72c16258abe92739d34ece40bdd1243fddd6b88cf56ddf63"
 dependencies = [
  "cmz-derive",
  "ff",
@@ -393,8 +394,9 @@ dependencies = [
 
 [[package]]
 name = "cmz-core"
-version = "0.3.0"
-source = "git+https://git-crysp.uwaterloo.ca/SigmaProtocol/cmz?branch=mu%2Fdraft-v3#5e7b23a75b9519b3697face63cb465969fbb56de"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b89a1048c23bbdfb857e15eced177b2d1c2b75a62f5783c515ee41f491bc8236"
 dependencies = [
  "clap",
  "darling 0.20.11",
@@ -406,8 +408,9 @@ dependencies = [
 
 [[package]]
 name = "cmz-derive"
-version = "0.3.0"
-source = "git+https://git-crysp.uwaterloo.ca/SigmaProtocol/cmz?branch=mu%2Fdraft-v3#5e7b23a75b9519b3697face63cb465969fbb56de"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe8cf5cda5def4d9ac911bcfbd5dcf3723706d369b5b72f1099d9cff34652833"
 dependencies = [
  "cmz-core",
  "darling 0.20.11",
@@ -2115,8 +2118,9 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "sigma-compiler"
-version = "0.2.3"
-source = "git+https://git-crysp.uwaterloo.ca/SigmaProtocol/sigma-compiler?branch=mu%2Fdraft-v3#4457e39c76afdf39825cbafbd9bbcf55645aaf18"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e7b2341f7047d3a270c480cd6ed5bb968bc3a6748a39c2b40d21c4ddf23ffa6"
 dependencies = [
  "group",
  "rand",
@@ -2127,8 +2131,9 @@ dependencies = [
 
 [[package]]
 name = "sigma-compiler-core"
-version = "0.2.3"
-source = "git+https://git-crysp.uwaterloo.ca/SigmaProtocol/sigma-compiler?branch=mu%2Fdraft-v3#4457e39c76afdf39825cbafbd9bbcf55645aaf18"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a391c860944d13d2adbca74f741fb8269709a25f58af9aa1891ee848a50897d9"
 dependencies = [
  "clap",
  "prettyplease",
@@ -2139,8 +2144,9 @@ dependencies = [
 
 [[package]]
 name = "sigma-compiler-derive"
-version = "0.2.3"
-source = "git+https://git-crysp.uwaterloo.ca/SigmaProtocol/sigma-compiler?branch=mu%2Fdraft-v3#4457e39c76afdf39825cbafbd9bbcf55645aaf18"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7108d08a78c3caaaaf7d20383fd2a8764f3adcfae0589e8a393a774794d13bc"
 dependencies = [
  "sigma-compiler-core",
  "syn",
